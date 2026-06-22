@@ -178,16 +178,6 @@
   .controls .desc {
     margin-left: 6px;
   }
-  .dpad {
-    display: grid;
-    grid-template-columns: repeat(3, 56px);
-    grid-template-rows: repeat(2, 56px);
-    gap: 6px;
-  }
-  .dpad .up    { grid-column: 2; grid-row: 1; }
-  .dpad .left  { grid-column: 1; grid-row: 2; }
-  .dpad .down  { grid-column: 2; grid-row: 2; }
-  .dpad .right { grid-column: 3; grid-row: 2; }
   .key {
     background: #16213e;
     border: 1px solid #444;
@@ -204,15 +194,8 @@
     font-family: inherit;
   }
   .key:active { background: #233456; border-color: #e94560; }
-  .key.drop {
-    width: 72px;
-    height: 118px;
-    font-size: 14px;
-    letter-spacing: 1px;
-  }
   .controls-mobile {
-    gap: 12px;
-    align-items: center;
+    display: none;
   }
   @media (max-width: 768px) {
     body { align-items: flex-start; padding: 8px; }
@@ -235,9 +218,16 @@
     .game-area { order: 2; }
     .controls-mobile {
       order: 3;
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(2, 60px);
+      gap: 6px;
       margin-top: 4px;
     }
+    .controls-mobile .up    { grid-column: 2; grid-row: 1; }
+    .controls-mobile .left  { grid-column: 1; grid-row: 2; }
+    .controls-mobile .down  { grid-column: 2; grid-row: 2; }
+    .controls-mobile .right { grid-column: 3; grid-row: 2; }
     .panel { flex: 1; padding: 6px 8px; text-align: center; }
     .panel .value { font-size: 18px; }
     .panel h3 { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
@@ -265,17 +255,9 @@
     .game-area { order: 1; }
     .controls-mobile {
       order: 3;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .dpad {
-      grid-template-columns: repeat(3, 44px);
-      grid-template-rows: repeat(2, 44px);
-    }
-    .key.drop {
-      width: 60px;
-      height: 92px;
-      font-size: 12px;
+      grid-template-columns: repeat(3, 42px);
+      grid-template-rows: repeat(2, 42px);
+      gap: 4px;
     }
     .panel { padding: 4px 8px; min-width: 90px; }
     .panel h3 { font-size: 10px; }
@@ -329,13 +311,10 @@
     </div>
   </div>
   <div class="controls-mobile">
-    <div class="dpad">
-      <button class="key up" data-action="rotate" type="button">↑</button>
-      <button class="key left" data-action="left" type="button">←</button>
-      <button class="key down" data-action="soft" type="button">↓</button>
-      <button class="key right" data-action="right" type="button">→</button>
-    </div>
-    <button class="key drop" data-action="hard" type="button">DROP</button>
+    <button class="key up" data-action="rotate" type="button">↑</button>
+    <button class="key left" data-action="left" type="button">←</button>
+    <button class="key down" data-action="soft" type="button">↓</button>
+    <button class="key right" data-action="right" type="button">→</button>
   </div>
 </div>
 
@@ -566,10 +545,39 @@ function draw() {
     for (let y = 0; y < current.blocks.length; y++)
       for (let x = 0; x < current.blocks[y].length; x++)
         if (current.blocks[y][x]) {
-          ctx.globalAlpha = 0.2;
+          ctx.globalAlpha = 0.1;
           drawBlock(ctx, current.x + x, ghostYVal + y, current.color, BLOCK);
           ctx.globalAlpha = 1;
         }
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.lineWidth = Math.max(1.2, BLOCK / 16);
+    ctx.setLineDash([BLOCK * 0.2, BLOCK * 0.15]);
+    for (let y = 0; y < current.blocks.length; y++) {
+      for (let x = 0; x < current.blocks[y].length; x++) {
+        if (!current.blocks[y][x]) continue;
+        const px = (current.x + x) * BLOCK;
+        const py = (ghostYVal + y) * BLOCK;
+        const noTop   = y === 0 || !current.blocks[y - 1][x];
+        const noBot   = y === current.blocks.length - 1 || !current.blocks[y + 1][x];
+        const noLeft  = x === 0 || !current.blocks[y][x - 1];
+        const noRight = x === current.blocks[y].length - 1 || !current.blocks[y][x + 1];
+        if (noTop) {
+          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + BLOCK, py); ctx.stroke();
+        }
+        if (noBot) {
+          ctx.beginPath(); ctx.moveTo(px, py + BLOCK); ctx.lineTo(px + BLOCK, py + BLOCK); ctx.stroke();
+        }
+        if (noLeft) {
+          ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + BLOCK); ctx.stroke();
+        }
+        if (noRight) {
+          ctx.beginPath(); ctx.moveTo(px + BLOCK, py); ctx.lineTo(px + BLOCK, py + BLOCK); ctx.stroke();
+        }
+      }
+    }
+    ctx.restore();
   }
 
   nextCtx.fillStyle = '#16213e';
