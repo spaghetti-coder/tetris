@@ -81,7 +81,7 @@
     </div>
     <div class="panel">
       <h3>Next</h3>
-      <canvas id="next-canvas" width="120" height="120"></canvas>
+      <canvas id="next-canvas" width="120" height="100"></canvas>
     </div>
     <div class="panel controls">
       <h3>Controls</h3>
@@ -126,6 +126,8 @@ let paused = false, gameOver = false;
 let current = null, next = null;
 let lastTime = 0, dropCounter = 0;
 let dropInterval = 1000;
+let softDropActive = false;
+let suppressSoftDrop = false;
 
 function randomPiece() {
   const name = PIECE_NAMES[Math.floor(Math.random() * PIECE_NAMES.length)];
@@ -170,6 +172,7 @@ function lock() {
   clearLines();
   current = next;
   next = randomPiece();
+  if (softDropActive) suppressSoftDrop = true;
   if (collides(current.blocks, 0, 0)) endGame();
 }
 
@@ -336,9 +339,20 @@ document.addEventListener('keydown', e => {
   switch (e.key) {
     case 'ArrowLeft': move(-1); e.preventDefault(); break;
     case 'ArrowRight': move(1); e.preventDefault(); break;
-    case 'ArrowDown': drop(); e.preventDefault(); break;
+    case 'ArrowDown':
+      softDropActive = true;
+      if (!suppressSoftDrop) drop();
+      e.preventDefault();
+      break;
     case 'ArrowUp': rotatePiece(); e.preventDefault(); break;
     case ' ': hardDrop(); e.preventDefault(); break;
+  }
+});
+
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowDown') {
+    softDropActive = false;
+    suppressSoftDrop = false;
   }
 });
 
@@ -349,6 +363,8 @@ function resetGame() {
   dropInterval = 1000;
   current = randomPiece();
   next = randomPiece();
+  softDropActive = false;
+  suppressSoftDrop = false;
   updateUI();
 }
 
