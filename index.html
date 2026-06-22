@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Tetris</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
   body {
     background: #1a1a2e;
     color: #eee;
@@ -13,17 +14,101 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
   }
   .wrapper {
     display: flex;
     gap: 24px;
     align-items: flex-start;
   }
+  .side { order: 2; }
+  .game-area { order: 1; }
+  .controls-mobile {
+    order: 3;
+    display: none;
+  }
   canvas {
     border: 2px solid #444;
     border-radius: 4px;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    display: block;
   }
+  .game-area {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+  }
+  #pause-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 2;
+    display: none;
+    width: 38px;
+    height: 38px;
+    background: rgba(22, 33, 62, 0.88);
+    border: 1px solid #555;
+    color: #e94560;
+    font-size: 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    touch-action: manipulation;
+    line-height: 1;
+  }
+  #pause-btn:active { background: rgba(40, 55, 95, 0.95); }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 3;
+    border-radius: 4px;
+  }
+  .overlay.hidden { display: none; }
+  .overlay-title {
+    color: #e94560;
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+  .overlay-score {
+    color: #eee;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .overlay-score b {
+    color: #e94560;
+    font-size: 24px;
+  }
+  .overlay-btn {
+    background: #e94560;
+    color: #fff;
+    border: none;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: 160px;
+    touch-action: manipulation;
+    line-height: 1.4;
+  }
+  .overlay-btn:active { background: #c9354c; }
+  .overlay-btn.secondary {
+    background: transparent;
+    border: 1px solid #e94560;
+    color: #e94560;
+  }
+  .overlay-btn.secondary:active { background: rgba(233, 69, 96, 0.15); }
   .side {
     display: flex;
     flex-direction: column;
@@ -48,24 +133,160 @@
     font-weight: bold;
     color: #e94560;
   }
-  #next-canvas {
-    border: none;
+  #next-canvas { border: none; }
+  .controls .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #ccc;
   }
-  .controls td {
-    padding: 3px 0;
-    font-size: 13px;
+  .controls .ctrl-row:last-child { margin-bottom: 0; }
+  .controls .keys {
+    display: inline-flex;
+    gap: 4px;
   }
-  .controls .key {
-    color: #e94560;
+  .controls kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 24px;
+    padding: 0 7px;
+    background: linear-gradient(180deg, #2a2a44, #16162a);
+    border: 1px solid #4a4a6a;
+    border-bottom-color: #2a2a3e;
+    border-radius: 5px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 11px;
     font-weight: bold;
-    text-align: right;
-    padding-right: 10px;
+    color: #e94560;
+    line-height: 1;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.3);
+  }
+  .controls kbd svg {
+    width: 12px;
+    height: 12px;
+    fill: #e94560;
+    display: block;
+  }
+  .controls kbd.wide {
+    min-width: 56px;
+    letter-spacing: 1px;
+  }
+  .controls .desc {
+    margin-left: 6px;
+  }
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(2, 56px);
+    gap: 6px;
+  }
+  .dpad .up    { grid-column: 2; grid-row: 1; }
+  .dpad .left  { grid-column: 1; grid-row: 2; }
+  .dpad .down  { grid-column: 2; grid-row: 2; }
+  .dpad .right { grid-column: 3; grid-row: 2; }
+  .key {
+    background: #16213e;
+    border: 1px solid #444;
+    color: #e94560;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    line-height: 1;
+    font-family: inherit;
+  }
+  .key:active { background: #233456; border-color: #e94560; }
+  .key.drop {
+    width: 72px;
+    height: 118px;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+  .controls-mobile {
+    gap: 12px;
+    align-items: center;
+  }
+  @media (max-width: 768px) {
+    body { align-items: flex-start; padding: 8px; }
+    .wrapper {
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .side {
+      order: 1;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      width: 100%;
+      max-width: 320px;
+      justify-content: space-between;
+      min-width: 0;
+      gap: 6px;
+    }
+    .game-area { order: 2; }
+    .controls-mobile {
+      order: 3;
+      display: flex;
+      margin-top: 4px;
+    }
+    .panel { flex: 1; padding: 6px 8px; text-align: center; }
+    .panel .value { font-size: 18px; }
+    .panel h3 { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
+    #next-canvas { width: 50px !important; height: 40px !important; }
+    .controls { display: none; }
+    #pause-btn { display: block; }
+    .overlay-title { font-size: 28px; }
+    .overlay-btn { padding: 12px 32px; font-size: 15px; min-width: 180px; }
+  }
+  @media (max-width: 768px) and (orientation: landscape) {
+    body { padding: 4px; }
+    .wrapper {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+    }
+    .side {
+      order: 2;
+      flex-direction: column;
+      width: auto;
+      max-width: none;
+      gap: 6px;
+    }
+    .game-area { order: 1; }
+    .controls-mobile {
+      order: 3;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dpad {
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(2, 44px);
+    }
+    .key.drop {
+      width: 60px;
+      height: 92px;
+      font-size: 12px;
+    }
+    .panel { padding: 4px 8px; min-width: 90px; }
+    .panel h3 { font-size: 10px; }
+    .panel .value { font-size: 16px; }
+    .controls { display: none; }
+    #pause-btn { display: block; }
   }
 </style>
 </head>
 <body>
 <div class="wrapper">
-  <canvas id="board" width="300" height="600"></canvas>
   <div class="side">
     <div class="panel">
       <h3>Score</h3>
@@ -81,23 +302,48 @@
     </div>
     <div class="panel">
       <h3>Next</h3>
-      <canvas id="next-canvas" width="120" height="100"></canvas>
+      <canvas id="next-canvas"></canvas>
     </div>
     <div class="panel controls">
       <h3>Controls</h3>
-      <table>
-        <tr><td class="key">← →</td><td>Move</td></tr>
-        <tr><td class="key">↑</td><td>Rotate</td></tr>
-        <tr><td class="key">↓</td><td>Soft Drop</td></tr>
-        <tr><td class="key">Space</td><td>Hard Drop</td></tr>
-        <tr><td class="key">P</td><td>Pause</td></tr>
-      </table>
+      <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M14 5 L10 5 L10 2 L2 8 L10 14 L10 11 L14 11 Z"/></svg></kbd><kbd><svg viewBox="0 0 16 16"><path d="M2 5 L2 11 L6 11 L6 14 L14 8 L6 2 L6 5 Z"/></svg></kbd></span><span class="desc">Move</span></div>
+      <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 8 L5 12 L11 12 L11 8 L14 8 L8 2 L2 8 Z"/></svg></kbd></span><span class="desc">Rotate</span></div>
+      <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 4 L11 4 L11 8 L14 8 L8 14 L2 8 L5 8 Z"/></svg></kbd></span><span class="desc">Soft Drop</span></div>
+      <div class="ctrl-row"><span class="keys"><kbd class="wide">Space</kbd></span><span class="desc">Hard Drop</span></div>
+      <div class="ctrl-row"><span class="keys"><kbd>P</kbd></span><span class="desc">Pause</span></div>
+      <div class="ctrl-row"><span class="keys"><kbd>R</kbd></span><span class="desc">Restart</span></div>
     </div>
+  </div>
+  <div class="game-area">
+    <button id="pause-btn" data-action="pause" type="button" aria-label="Pause">⏸</button>
+    <canvas id="board"></canvas>
+    <div class="overlay hidden" data-overlay="pause">
+      <div class="overlay-title">PAUSED</div>
+      <button class="overlay-btn" data-action="resume" type="button">RESUME</button>
+      <button class="overlay-btn secondary" data-action="restart" type="button">RESTART</button>
+    </div>
+    <div class="overlay hidden" data-overlay="over">
+      <div class="overlay-title">GAME OVER</div>
+      <div class="overlay-score">Score: <b id="final-score">0</b></div>
+      <button class="overlay-btn" data-action="restart" type="button">PLAY AGAIN</button>
+    </div>
+  </div>
+  <div class="controls-mobile">
+    <div class="dpad">
+      <button class="key up" data-action="rotate" type="button">↑</button>
+      <button class="key left" data-action="left" type="button">←</button>
+      <button class="key down" data-action="soft" type="button">↓</button>
+      <button class="key right" data-action="right" type="button">→</button>
+    </div>
+    <button class="key drop" data-action="hard" type="button">DROP</button>
   </div>
 </div>
 
 <script>
-const COLS = 10, ROWS = 20, BLOCK = 30;
+const COLS = 10, ROWS = 20;
+let BLOCK = 30;
+let VIEW_W = 300, VIEW_H = 600;
+let NEXT_W = 120, NEXT_H = 100;
 const COLORS = [
   null,
   '#00f0f0', '#0000f0', '#f0a000', '#f0f000', '#00f000', '#f00000', '#a000f0'
@@ -120,6 +366,42 @@ const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
 const nextCtx = nextCanvas.getContext('2d');
 
+function resize() {
+  const ratio = window.devicePixelRatio || 1;
+  const isMobile = window.innerWidth <= 768;
+  const isLandscape = isMobile && window.innerWidth > window.innerHeight;
+  let maxW, availableH;
+  if (isLandscape) {
+    maxW = (window.innerWidth - 220) / 2;
+    availableH = window.innerHeight - 80;
+  } else if (isMobile) {
+    maxW = window.innerWidth - 16;
+    availableH = window.innerHeight - 260;
+  } else {
+    maxW = 320;
+    availableH = 700;
+  }
+  BLOCK = Math.max(15, Math.floor(Math.min(maxW / COLS, availableH / ROWS)));
+  VIEW_W = BLOCK * COLS;
+  VIEW_H = BLOCK * ROWS;
+
+  canvas.style.width = VIEW_W + 'px';
+  canvas.style.height = VIEW_H + 'px';
+  canvas.width = Math.floor(VIEW_W * ratio);
+  canvas.height = Math.floor(VIEW_H * ratio);
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+  NEXT_W = isMobile ? 50 : 120;
+  NEXT_H = isMobile ? 40 : 83;
+  nextCanvas.style.width = NEXT_W + 'px';
+  nextCanvas.style.height = NEXT_H + 'px';
+  nextCanvas.width = Math.floor(NEXT_W * ratio);
+  nextCanvas.height = Math.floor(NEXT_H * ratio);
+  nextCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 100));
+
 let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 let score = 0, level = 1, lines = 0;
 let paused = false, gameOver = false;
@@ -128,6 +410,32 @@ let lastTime = 0, dropCounter = 0;
 let dropInterval = 1000;
 let softDropActive = false;
 let suppressSoftDrop = false;
+let lockTimer = null;
+let dasTimer = null;
+let arrTimer = null;
+let dasDir = 0;
+const LOCK_DELAY = 500;
+const DAS_DELAY = 150;
+const ARR_RATE = 50;
+
+const overlays = {};
+document.querySelectorAll('[data-overlay]').forEach(el => {
+  overlays[el.dataset.overlay] = el;
+});
+
+function showOverlay(name) {
+  for (const el of Object.values(overlays)) el.classList.add('hidden');
+  if (name && overlays[name]) overlays[name].classList.remove('hidden');
+}
+
+function setPaused(v) {
+  paused = v;
+  if (gameOver) {
+    showOverlay('over');
+  } else {
+    showOverlay(paused ? 'pause' : null);
+  }
+}
 
 function randomPiece() {
   const name = PIECE_NAMES[Math.floor(Math.random() * PIECE_NAMES.length)];
@@ -161,7 +469,22 @@ function collides(b, offsetX, offsetY) {
   return false;
 }
 
+function tryLock() {
+  if (lockTimer || !current) return;
+  if (collides(current.blocks, 0, 1)) {
+    lockTimer = setTimeout(() => {
+      lockTimer = null;
+      if (!paused && !gameOver && current) lock();
+    }, LOCK_DELAY);
+  }
+}
+
+function resetLock() {
+  if (lockTimer) { clearTimeout(lockTimer); lockTimer = null; }
+}
+
 function lock() {
+  resetLock();
   for (let y = 0; y < current.blocks.length; y++)
     for (let x = 0; x < current.blocks[y].length; x++)
       if (current.blocks[y][x]) {
@@ -192,12 +515,15 @@ function clearLines() {
     lines += cleared;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(50, 1000 - (level - 1) * 80);
+    vibrate(cleared * 15);
     updateUI();
   }
 }
 
 function endGame() {
   gameOver = true;
+  document.getElementById('final-score').textContent = score;
+  showOverlay('over');
 }
 
 function updateUI() {
@@ -222,7 +548,7 @@ function drawBlock(context, x, y, colorId, size) {
 
 function draw() {
   ctx.fillStyle = '#0f0f23';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
   for (let y = 0; y < ROWS; y++)
     for (let x = 0; x < COLS; x++)
@@ -246,33 +572,12 @@ function draw() {
         }
   }
 
-  if (paused) {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#e94560';
-    ctx.font = '36px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
-  }
-
-  if (gameOver) {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#e94560';
-    ctx.font = '36px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-    ctx.font = '18px Segoe UI';
-    ctx.fillStyle = '#ccc';
-    ctx.fillText('Press R to restart', canvas.width / 2, canvas.height / 2 + 40);
-  }
-
   nextCtx.fillStyle = '#16213e';
-  nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+  nextCtx.fillRect(0, 0, NEXT_W, NEXT_H);
   if (next) {
-    const bs = 22;
-    const cx = Math.floor((nextCanvas.width - next.blocks[0].length * bs) / 2);
-    const cy = Math.floor((nextCanvas.height - next.blocks.length * bs) / 2);
+    const bs = NEXT_W >= 100 ? 22 : 14;
+    const cx = Math.floor((NEXT_W - next.blocks[0].length * bs) / 2);
+    const cy = Math.floor((NEXT_H - next.blocks.length * bs) / 2);
     for (let y = 0; y < next.blocks.length; y++)
       for (let x = 0; x < next.blocks[y].length; x++)
         if (next.blocks[y][x]) {
@@ -293,8 +598,14 @@ function ghostY() {
 }
 
 function drop() {
-  if (!collides(current.blocks, 0, 1)) current.y++;
-  else lock();
+  if (!collides(current.blocks, 0, 1)) {
+    current.y++;
+    score += 1;
+    updateUI();
+    resetLock();
+  } else {
+    tryLock();
+  }
   dropCounter = 0;
 }
 
@@ -303,12 +614,18 @@ function hardDrop() {
     current.y++;
     score += 2;
   }
+  resetLock();
+  vibrate(15);
   lock();
   updateUI();
 }
 
 function move(dir) {
-  if (!collides(current.blocks, dir, 0)) current.x += dir;
+  if (!collides(current.blocks, dir, 0)) {
+    current.x += dir;
+    resetLock();
+    tryLock();
+  }
 }
 
 function rotatePiece() {
@@ -318,34 +635,70 @@ function rotatePiece() {
     if (!collides(rotated, k, 0)) {
       current.blocks = rotated;
       current.x += k;
+      resetLock();
+      tryLock();
       return;
     }
   }
 }
 
+function startDAS(dir) {
+  if (dasDir === dir) return;
+  stopDAS();
+  dasDir = dir;
+  move(dir);
+  dasTimer = setTimeout(() => {
+    arrTimer = setInterval(() => {
+      if (!paused && !gameOver && current) move(dir);
+    }, ARR_RATE);
+  }, DAS_DELAY);
+}
+
+function stopDAS() {
+  if (dasTimer) clearTimeout(dasTimer);
+  if (arrTimer) clearInterval(arrTimer);
+  dasTimer = null;
+  arrTimer = null;
+  dasDir = 0;
+}
+
+function vibrate(ms) {
+  if (navigator.vibrate) navigator.vibrate(ms);
+}
+
 document.addEventListener('keydown', e => {
   if (gameOver) {
-    if (e.key === 'r' || e.key === 'R') resetGame();
+    if (e.key === 'r' || e.key === 'R' || e.key === 'Enter') resetGame();
     return;
   }
 
-  if (e.key === 'p' || e.key === 'P') {
-    paused = !paused;
+  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+    setPaused(!paused);
+    e.preventDefault();
     return;
   }
 
   if (paused) return;
 
   switch (e.key) {
-    case 'ArrowLeft': move(-1); e.preventDefault(); break;
-    case 'ArrowRight': move(1); e.preventDefault(); break;
+    case 'ArrowLeft': startDAS(-1); e.preventDefault(); break;
+    case 'ArrowRight': startDAS(1); e.preventDefault(); break;
     case 'ArrowDown':
       softDropActive = true;
       if (!suppressSoftDrop) drop();
       e.preventDefault();
       break;
-    case 'ArrowUp': rotatePiece(); e.preventDefault(); break;
-    case ' ': hardDrop(); e.preventDefault(); break;
+    case 'ArrowUp':
+    case 'x':
+    case 'X':
+      rotatePiece();
+      e.preventDefault();
+      break;
+    case ' ':
+    case 'Enter':
+      hardDrop();
+      e.preventDefault();
+      break;
   }
 });
 
@@ -353,25 +706,97 @@ document.addEventListener('keyup', e => {
   if (e.key === 'ArrowDown') {
     softDropActive = false;
     suppressSoftDrop = false;
+  } else if (e.key === 'ArrowLeft' && dasDir === -1) {
+    stopDAS();
+  } else if (e.key === 'ArrowRight' && dasDir === 1) {
+    stopDAS();
   }
 });
 
+function bindHold(button, action) {
+  let t1 = null, t2 = null, pid = null;
+  const start = e => {
+    e.preventDefault();
+    if (paused || gameOver) return;
+    pid = e.pointerId;
+    try { button.setPointerCapture(pid); } catch (_) {}
+    action();
+    t1 = setTimeout(() => {
+      t2 = setInterval(() => {
+        if (!paused && !gameOver) action();
+      }, ARR_RATE);
+    }, DAS_DELAY);
+  };
+  const end = () => {
+    if (t1) { clearTimeout(t1); t1 = null; }
+    if (t2) { clearInterval(t2); t2 = null; }
+    pid = null;
+  };
+  button.addEventListener('pointerdown', start);
+  button.addEventListener('pointerup', end);
+  button.addEventListener('pointercancel', end);
+  button.addEventListener('pointerleave', end);
+  button.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+function bindTap(button, action, requireRunning = true) {
+  button.addEventListener('click', e => {
+    e.preventDefault();
+    if (requireRunning && (paused || gameOver)) return;
+    action();
+  });
+  button.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+const ACTIONS = {
+  left:    () => move(-1),
+  right:   () => move(1),
+  soft:    () => drop(),
+  hard:    () => hardDrop(),
+  rotate:  () => rotatePiece(),
+  pause:   () => { if (!gameOver) setPaused(!paused); },
+  resume:  () => { if (!gameOver) setPaused(false); },
+  restart: () => resetGame()
+};
+
+document.querySelectorAll('[data-action]').forEach(btn => {
+  const a = btn.dataset.action;
+  const fn = ACTIONS[a];
+  if (!fn) return;
+  if (a === 'left' || a === 'right' || a === 'soft') {
+    bindHold(btn, fn);
+  } else if (a === 'pause' || a === 'resume' || a === 'restart') {
+    bindTap(btn, fn, false);
+  } else {
+    bindTap(btn, fn, true);
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && !gameOver) setPaused(true);
+});
+
 function resetGame() {
+  stopDAS();
+  resetLock();
   grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   score = 0; level = 1; lines = 0;
   paused = false; gameOver = false;
   dropInterval = 1000;
+  dropCounter = 0;
+  lastTime = 0;
   current = randomPiece();
   next = randomPiece();
   softDropActive = false;
   suppressSoftDrop = false;
+  showOverlay(null);
   updateUI();
 }
 
 function gameLoop(t = 0) {
+  const dt = lastTime ? Math.min(100, t - lastTime) : 0;
+  lastTime = t;
   if (!paused && !gameOver) {
-    const dt = t - lastTime;
-    lastTime = t;
     dropCounter += dt;
     if (dropCounter > dropInterval) drop();
   }
@@ -379,6 +804,7 @@ function gameLoop(t = 0) {
   requestAnimationFrame(gameLoop);
 }
 
+resize();
 resetGame();
 requestAnimationFrame(gameLoop);
 </script>
