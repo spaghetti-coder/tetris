@@ -523,6 +523,11 @@
     function isRunning()  { return !paused && !gameOver; }
     function isPlayable() { return isRunning() && current; }
 
+    function clearSoftDrop() {
+      softDropActive = false;
+      suppressSoftDrop = false;
+    }
+
     // --- Ghost piece setting (persistence) ---
 
     function loadGhostEnabled() {
@@ -885,8 +890,7 @@
 
     document.addEventListener('keyup', e => {
       if (e.key === 'ArrowDown') {
-        softDropActive = false;
-        suppressSoftDrop = false;
+        clearSoftDrop();
       } else if (e.key === 'ArrowLeft' && dasDir === -1) {
         stopDAS();
       } else if (e.key === 'ArrowRight' && dasDir === 1) {
@@ -896,23 +900,31 @@
 
     // --- Input: mobile buttons ---
 
-    function bindHold(button, action) {
+    function bindHold(button, action, isSoft = false) {
       let t1 = null, t2 = null, pid = null;
       const start = e => {
         e.preventDefault();
         if (paused || gameOver) return;
         pid = e.pointerId;
         try { button.setPointerCapture(pid); } catch (_) {}
-        action();
+        if (isSoft) {
+          softDropActive = true;
+          if (!suppressSoftDrop) drop();
+        } else {
+          action();
+        }
         t1 = setTimeout(() => {
           t2 = setInterval(() => {
-            if (isRunning()) action();
+            if (!isRunning()) return;
+            if (isSoft && suppressSoftDrop) return;
+            action();
           }, ARR_RATE);
         }, DAS_DELAY);
       };
       const end = () => {
         if (t1) { clearTimeout(t1); t1 = null; }
         if (t2) { clearInterval(t2); t2 = null; }
+        if (isSoft) clearSoftDrop();
         pid = null;
       };
       button.addEventListener('pointerdown', start);
@@ -955,7 +967,7 @@
       const fn = ACTIONS[a];
       if (!fn) return;
       if (a === 'left' || a === 'right' || a === 'soft') {
-        bindHold(btn, fn);
+        bindHold(btn, fn, a === 'soft');
       } else if (a === 'pause' || a === 'resume' || a === 'restart') {
         bindTap(btn, fn, false);
       } else {
@@ -1015,9 +1027,9 @@
       lastTime = 0;
       current = randomPiece();
       next = randomPiece();
-      softDropActive = false;
-      suppressSoftDrop = false;
+      clearSoftDrop();
       showOverlay(null);
+      updatePauseBtn(paused);
       updateUI();
     }
 
