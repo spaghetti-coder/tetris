@@ -401,6 +401,10 @@
           <i class="fa-solid fa-ghost icon" aria-hidden="true"></i>
           <span class="indicator" id="ghost-indicator">●</span>
         </button>
+        <button id="sevenbag-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" aria-label="Toggle 7-bag">
+          <i class="fa-solid fa-sack-dollar icon" aria-hidden="true"></i>
+          <span class="indicator" id="sevenbag-indicator">○</span>
+        </button>
       </div>
       <button id="pause-btn" class="icon-btn" data-action="pause" type="button" aria-label="Pause"><i class="fa-solid fa-pause" aria-hidden="true"></i></button>
       <canvas id="board"></canvas>
@@ -447,6 +451,7 @@
     const ARR_RATE = 50;
 
     const GHOST_STORAGE_KEY = 'tetris.ghost.enabled';
+    const SEVENBAG_STORAGE_KEY = 'tetris.sevenbag.enabled';
 
     // --- DOM references ---
 
@@ -459,6 +464,8 @@
     const settingsMenu = document.getElementById('settings-menu');
     const ghostToggleBtn = document.getElementById('ghost-toggle');
     const ghostIndicator = document.getElementById('ghost-indicator');
+    const sevenBagToggleBtn = document.getElementById('sevenbag-toggle');
+    const sevenBagIndicator = document.getElementById('sevenbag-indicator');
     const overlays = {
       pause: document.getElementById('overlay-pause'),
       over:  document.getElementById('overlay-over'),
@@ -519,6 +526,8 @@
     let dasDir = 0;
     let ghostYVal = 0;
     let ghostEnabled = loadGhostEnabled();
+    let sevenBagEnabled = loadSevenBagEnabled();
+    let bag = [];
 
     function isRunning()  { return !paused && !gameOver; }
     function isPlayable() { return isRunning() && current; }
@@ -543,6 +552,27 @@
       try { localStorage.setItem(GHOST_STORAGE_KEY, v ? 'true' : 'false'); } catch (_) {}
     }
 
+    function loadSevenBagEnabled() {
+      try {
+        const raw = localStorage.getItem(SEVENBAG_STORAGE_KEY);
+        if (raw === 'true') return true;
+        if (raw === 'false') return false;
+      } catch (_) {}
+      return false;
+    }
+
+    function saveSevenBagEnabled(v) {
+      try { localStorage.setItem(SEVENBAG_STORAGE_KEY, v ? 'true' : 'false'); } catch (_) {}
+    }
+
+    function fillBag() {
+      bag = [...PIECE_NAMES];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = randInt(i + 1);
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+    }
+
     // --- Random & piece math ---
 
     const randInt = (() => {
@@ -561,7 +591,13 @@
     })();
 
     function randomPiece() {
-      const name = PIECE_NAMES[randInt(PIECE_NAMES.length)];
+      let name;
+      if (sevenBagEnabled) {
+        if (!bag.length) fillBag();
+        name = bag.pop();
+      } else {
+        name = PIECE_NAMES[randInt(PIECE_NAMES.length)];
+      }
       const s = SHAPES[name];
       return {
         blocks: s.blocks.map(r => [...r]),
@@ -987,6 +1023,11 @@
       ghostToggleBtn.setAttribute('aria-checked', ghostEnabled ? 'true' : 'false');
     }
 
+    function updateSevenBagIndicator() {
+      sevenBagIndicator.textContent = sevenBagEnabled ? '\u25CF' : '\u25CB';
+      sevenBagToggleBtn.setAttribute('aria-checked', sevenBagEnabled ? 'true' : 'false');
+    }
+
     settingsBtn.addEventListener('click', () => {
       const isOpen = settingsMenu.classList.contains('open');
       if (isOpen) {
@@ -1013,6 +1054,16 @@
       settingsBtn.focus();
     });
 
+    sevenBagToggleBtn.addEventListener('click', () => {
+      sevenBagEnabled = !sevenBagEnabled;
+      saveSevenBagEnabled(sevenBagEnabled);
+      updateSevenBagIndicator();
+      bag = [];
+      if (sevenBagEnabled) fillBag();
+      setMenuOpen(false);
+      settingsBtn.focus();
+    });
+
     // --- Lifecycle ---
 
     function resetGame() {
@@ -1024,6 +1075,7 @@
       pauseBtn.style.display = '';
       dropInterval = 1000;
       dropCounter = 0;
+      bag = [];
       lastTime = 0;
       current = randomPiece();
       next = randomPiece();
@@ -1051,6 +1103,7 @@
     // --- Init ---
 
     updateGhostIndicator();
+    updateSevenBagIndicator();
     resize();
     resetGame();
     requestAnimationFrame(gameLoop);
