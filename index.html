@@ -105,9 +105,16 @@
       height: 38px;
       color: var(--color-accent);
       cursor: pointer;
-      transition: background 120ms ease, border-color 120ms ease;
+      transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
     }
     .icon-btn:active { background: var(--color-glass-active); }
+    /* Dim icon buttons during active play; restore full opacity when no play */
+    body:not(.paused):not(.game-over) .icon-btn { opacity: 0.4; }
+    body:not(.paused):not(.game-over) .icon-btn:focus-visible,
+    body:not(.paused):not(.game-over) .icon-btn:active { opacity: 1; }
+    @media (hover: hover) {
+      body:not(.paused):not(.game-over) .icon-btn:hover { opacity: 1; }
+    }
     .settings-item {
       position: relative;
       width: 38px;
@@ -217,7 +224,7 @@
       background: var(--color-glass-active);
       border-color: var(--color-accent);
     }
-    #settings-btn .fa-gear { font-size: 20px; }
+    #settings-btn .fa-bars { font-size: 20px; }
     #settings-menu {
       position: absolute;
       top: 50px;
@@ -413,7 +420,7 @@
     </div>
     <div class="game-area">
       <button id="settings-btn" class="icon-btn" type="button" aria-label="Settings" aria-haspopup="menu" aria-expanded="false">
-        <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
       <div id="settings-menu" role="menu" aria-label="Settings">
         <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="true" aria-label="Toggle ghost">
