@@ -866,32 +866,37 @@
         this._settingsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       },
       isSettingsMenuOpen() { return this._menu.classList.contains('open'); },
+      closeSettingsMenu() {
+        if (!this.isSettingsMenuOpen()) return;
+        this.setSettingsMenuOpen(false);
+        this.focusSettingsBtn();
+      },
       focusSettingsBtn()   { this._settingsBtn.focus(); },
       focusGhostToggle()   { this._ghostToggle.focus(); },
 
-      setGhostIndicator(on)  { this._ghostIndicator.classList.toggle('on', on); this._ghostToggle.setAttribute('aria-checked', on ? 'true' : 'false'); },
-      setSevenBagIndicator(on) { this._sevenBagIndicator.classList.toggle('on', on); this._sevenBagToggle.setAttribute('aria-checked', on ? 'true' : 'false'); },
+      _setIndicator(indicatorEl, toggleEl, on) {
+        indicatorEl.classList.toggle('on', on);
+        toggleEl.setAttribute('aria-checked', on ? 'true' : 'false');
+      },
+
+      setGhostIndicator(on)    { this._setIndicator(this._ghostIndicator,   this._ghostToggle,   on); },
+      setSevenBagIndicator(on) { this._setIndicator(this._sevenBagIndicator, this._sevenBagToggle, on); },
 
       setBodyState(paused, gameOver) {
         document.body.classList.toggle('paused', paused);
         document.body.classList.toggle('game-over', gameOver);
       },
 
-      resizeCanvas(w, h, ratio) {
-        this._canvas.style.width = w + 'px';
-        this._canvas.style.height = h + 'px';
-        this._canvas.width = Math.floor(w * ratio);
-        this._canvas.height = Math.floor(h * ratio);
-        this._ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      _resizeCanvas(canvas, ctx, w, h, ratio) {
+        canvas.style.width  = w + 'px';
+        canvas.style.height = h + 'px';
+        canvas.width  = Math.floor(w * ratio);
+        canvas.height = Math.floor(h * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       },
 
-      resizeNextCanvas(w, h, ratio) {
-        this._nextCanvas.style.width = w + 'px';
-        this._nextCanvas.style.height = h + 'px';
-        this._nextCanvas.width = Math.floor(w * ratio);
-        this._nextCanvas.height = Math.floor(h * ratio);
-        this._nextCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      },
+      resizeCanvas(w, h, ratio)     { this._resizeCanvas(this._canvas,    this._ctx,    w, h, ratio); },
+      resizeNextCanvas(w, h, ratio) { this._resizeCanvas(this._nextCanvas, this._nextCtx, w, h, ratio); },
     };
 
     // --- Settings ---
@@ -918,15 +923,13 @@
         this.sevenBagEnabled = this._load(SEVENBAG_STORAGE_KEY, false);
       },
 
-      toggleGhost() {
-        this.ghostEnabled = !this.ghostEnabled;
-        this._save(GHOST_STORAGE_KEY, this.ghostEnabled);
+      _toggle(field, storageKey) {
+        this[field] = !this[field];
+        this._save(storageKey, this[field]);
       },
 
-      toggleSevenBag() {
-        this.sevenBagEnabled = !this.sevenBagEnabled;
-        this._save(SEVENBAG_STORAGE_KEY, this.sevenBagEnabled);
-      },
+      toggleGhost()    { this._toggle('ghostEnabled',    GHOST_STORAGE_KEY); },
+      toggleSevenBag() { this._toggle('sevenBagEnabled', SEVENBAG_STORAGE_KEY); },
     };
 
     // --- Input ---
@@ -950,8 +953,7 @@
 
           if (menuOpen) {
             if (e.key === 'Escape') {
-              view.setSettingsMenuOpen(false);
-              view.focusSettingsBtn();
+              view.closeSettingsMenu();
               e.preventDefault();
             }
             return;
@@ -1051,14 +1053,21 @@
           pause:   () => {
             if (Game.gameOver) return;
             if (view.isSettingsMenuOpen()) {
-              view.setSettingsMenuOpen(false);
-              view.focusSettingsBtn();
+              view.closeSettingsMenu();
+              if (Game.paused) Lifecycle.setPaused(false);
               return;
             }
             Lifecycle.togglePause();
           },
-          resume:  () => { if (!Game.gameOver) Lifecycle.setPaused(false); },
-          restart: () => Lifecycle.resetGame()
+          resume:  () => {
+            if (Game.gameOver) return;
+            view.closeSettingsMenu();
+            Lifecycle.setPaused(false);
+          },
+          restart: () => {
+            view.closeSettingsMenu();
+            Lifecycle.resetGame();
+          }
         };
 
         view.actionBtns.forEach(btn => {
@@ -1087,18 +1096,9 @@
           }
         });
 
-        document.addEventListener('pointerdown', e => {
-          if (!view.isSettingsMenuOpen()) return;
-          if (e.target.closest('#settings-btn, #settings-menu')) return;
-          view.setSettingsMenuOpen(false);
-          view.focusSettingsBtn();
-        });
-
         view._ghostToggle.addEventListener('click', () => {
           Settings.toggleGhost();
           view.setGhostIndicator(Settings.ghostEnabled);
-          view.setSettingsMenuOpen(false);
-          view.focusSettingsBtn();
         });
 
         view._sevenBagToggle.addEventListener('click', () => {
@@ -1106,8 +1106,6 @@
           view.setSevenBagIndicator(Settings.sevenBagEnabled);
           Game.bag = [];
           if (Settings.sevenBagEnabled) Game.fillBag();
-          view.setSettingsMenuOpen(false);
-          view.focusSettingsBtn();
         });
       },
 
