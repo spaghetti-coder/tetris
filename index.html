@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="i18n-loading">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <title>Tetris</title>
   <style>
+    .i18n-loading body { visibility: hidden; }
     /* --- Tokens --- */
     :root {
       --color-bg: #1a1a2e;
@@ -305,6 +306,48 @@
       border-bottom-color: var(--color-accent);
     }
 
+    .lang-submenu-wrapper { position: relative; }
+    #lang-submenu {
+      position: absolute;
+      top: 0;
+      left: calc(100% + 8px);
+      z-index: 6;
+      display: none;
+      width: auto;
+      min-width: 0;
+      max-height: 240px;
+      overflow-y: auto;
+      background: var(--color-glass);
+      border: 1px solid var(--color-border-light);
+      border-radius: 6px;
+      padding: 6px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+    #lang-submenu.open { display: block; }
+    .lang-option {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      color: var(--color-text);
+      font: inherit;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .lang-option:hover,
+    .lang-option:focus-visible { background: var(--color-accent-glow); }
+    .lang-option .indicator {
+      margin-right: 6px;
+      color: var(--color-accent);
+      font-size: 10px;
+    }
+    .lang-option .indicator::after { content: '\25CB'; }
+    .lang-option.active .indicator::after { content: '\25CF'; }
+
     /* --- Overlays --- */
     .overlay {
       position: absolute;
@@ -322,11 +365,13 @@
       font-weight: bold;
       letter-spacing: 3px;
       line-height: 1;
+      text-align: center;
     }
     .overlay-score {
       color: var(--color-text);
       font-size: 16px;
       line-height: 1;
+      text-align: center;
     }
     .overlay-score b {
       color: var(--color-accent);
@@ -390,8 +435,8 @@
       .panel h3 { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
       #next-canvas { width: 50px !important; height: 40px !important; }
       .controls { display: none; }
-      .overlay-title { font-size: 28px; }
-      .overlay-btn { padding: 12px 32px; font-size: 15px; min-width: 180px; }
+      .overlay-title { font-size: 22px; letter-spacing: 2px; }
+      .overlay-btn { padding: 12px 24px; font-size: 14px; width: min(260px, calc(100% - 32px)); }
     }
     @media (max-width: 768px) and (orientation: landscape) {
       body { padding: 4px; }
@@ -431,58 +476,66 @@
   <div class="wrapper">
     <div class="side">
       <div class="panel">
-        <h3>Score</h3>
+        <h3 data-i18n="score">Score</h3>
         <div class="value" id="score">0</div>
       </div>
       <div class="panel">
-        <h3>Level</h3>
+        <h3 data-i18n="level">Level</h3>
         <div class="value" id="level">1</div>
       </div>
       <div class="panel">
-        <h3>Lines</h3>
+        <h3 data-i18n="lines">Lines</h3>
         <div class="value" id="lines">0</div>
       </div>
       <div class="panel">
-        <h3>Next</h3>
+        <h3 data-i18n="next">Next</h3>
         <canvas id="next-canvas"></canvas>
       </div>
       <div class="panel controls">
-        <h3>Controls</h3>
-        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M14 5 L10 5 L10 2 L2 8 L10 14 L10 11 L14 11 Z"/></svg></kbd><kbd><svg viewBox="0 0 16 16"><path d="M2 5 L2 11 L6 11 L6 14 L14 8 L6 2 L6 5 Z"/></svg></kbd></span><span class="desc">Move</span></div>
-        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 8 L5 12 L11 12 L11 8 L14 8 L8 2 L2 8 Z"/></svg></kbd></span><span class="desc">Rotate</span></div>
-        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 4 L11 4 L11 8 L14 8 L8 14 L2 8 L5 8 Z"/></svg></kbd></span><span class="desc">Soft Drop</span></div>
-        <div class="ctrl-row"><span class="keys"><kbd class="wide">Space</kbd></span><span class="desc">Hard Drop</span></div>
-        <div class="ctrl-row"><span class="keys"><kbd>P</kbd></span><span class="desc">Pause</span></div>
-        <div class="ctrl-row"><span class="keys"><kbd>R</kbd></span><span class="desc">Restart</span></div>
+        <h3 data-i18n="controls">Controls</h3>
+        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M14 5 L10 5 L10 2 L2 8 L10 14 L10 11 L14 11 Z"/></svg></kbd><kbd><svg viewBox="0 0 16 16"><path d="M2 5 L2 11 L6 11 L6 14 L14 8 L6 2 L6 5 Z"/></svg></kbd></span><span class="desc" data-i18n="move">Move</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 8 L5 12 L11 12 L11 8 L14 8 L8 2 L2 8 Z"/></svg></kbd></span><span class="desc" data-i18n="rotate">Rotate</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 4 L11 4 L11 8 L14 8 L8 14 L2 8 L5 8 Z"/></svg></kbd></span><span class="desc" data-i18n="softDrop">Soft Drop</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd class="wide">Space</kbd></span><span class="desc" data-i18n="hardDrop">Hard Drop</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>P</kbd></span><span class="desc" data-i18n="pause">Pause</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>R</kbd></span><span class="desc" data-i18n="restart">Restart</span></div>
       </div>
     </div>
     <div class="game-area">
-      <button id="settings-btn" class="icon-btn" type="button" aria-label="Settings" aria-haspopup="menu" aria-expanded="false">
+      <button id="settings-btn" class="icon-btn" type="button" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings" aria-haspopup="menu" aria-expanded="false">
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
-      <div id="settings-menu" role="menu" aria-label="Settings">
-        <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="true" aria-label="Ghost object">
+      <div id="settings-menu" role="menu" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings">
+        <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="true" data-i18n="ghost" data-i18n-attr="aria-label" aria-label="Ghost object">
           <i class="fa-solid fa-ghost icon" aria-hidden="true"></i>
           <span class="indicator on" id="ghost-indicator"></span>
-          <span class="label">Ghost object</span>
+          <span class="label" data-i18n="ghost">Ghost object</span>
         </button>
-        <button id="sevenbag-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" aria-label="7-bag">
+        <button id="sevenbag-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="sevenBag" data-i18n-attr="aria-label" aria-label="7-bag">
           <i class="fa-solid fa-sack-dollar icon" aria-hidden="true"></i>
           <span class="indicator" id="sevenbag-indicator"></span>
-          <span class="label">7-bag</span>
+          <span class="label" data-i18n="sevenBag">7-bag</span>
         </button>
+        <div class="lang-submenu-wrapper">
+          <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
+            <i class="fa-solid fa-language icon" aria-hidden="true"></i>
+            <span class="label">Language</span>
+          </button>
+          <div id="lang-submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
+          </div>
+        </div>
       </div>
-      <button id="pause-btn" class="icon-btn" data-action="pause" type="button" aria-label="Pause"><i class="fa-solid fa-pause icon-pause" aria-hidden="true"></i><i class="fa-solid fa-play icon-play" aria-hidden="true"></i></button>
+      <button id="pause-btn" class="icon-btn" data-action="pause" type="button" data-i18n="pause" data-i18n-attr="aria-label" aria-label="Pause"><i class="fa-solid fa-pause icon-pause" aria-hidden="true"></i><i class="fa-solid fa-play icon-play" aria-hidden="true"></i></button>
       <canvas id="board"></canvas>
       <div class="overlay hidden" id="overlay-pause">
-        <div class="overlay-title">PAUSED</div>
-        <button class="overlay-btn" data-action="resume" type="button">RESUME</button>
-        <button class="overlay-btn secondary" data-action="restart" type="button">RESTART</button>
+        <div class="overlay-title" data-i18n="paused">PAUSED</div>
+        <button class="overlay-btn" data-action="resume" type="button" data-i18n="resume">RESUME</button>
+        <button class="overlay-btn secondary" data-action="restart" type="button" data-i18n="restart">RESTART</button>
       </div>
       <div class="overlay hidden" id="overlay-over">
-        <div class="overlay-title">GAME OVER</div>
-        <div class="overlay-score">Score: <b id="final-score">0</b></div>
-        <button class="overlay-btn" data-action="restart" type="button">PLAY AGAIN</button>
+        <div class="overlay-title" data-i18n="gameOver">GAME OVER</div>
+        <div class="overlay-score"><span data-i18n="scoreLabel">Score:</span> <b id="final-score">0</b></div>
+        <button class="overlay-btn" data-action="restart" type="button" data-i18n="playAgain">PLAY AGAIN</button>
       </div>
     </div>
     <div class="controls-mobile">
@@ -494,6 +547,181 @@
   </div>
 
   <script>
+    // --- I18N ---
+
+    const LANG_STORAGE_KEY = 'tetris.lang';
+
+    const I18N = {
+      langs: ['en', 'ru', 'bg', 'ro', 'fr'],
+      default: 'en',
+      names: {
+        en: 'English',
+        ru: 'Русский',
+        bg: 'Български',
+        ro: 'Română',
+        fr: 'Français'
+      },
+      messages: {
+        en: {
+          score: 'Score',
+          level: 'Level',
+          lines: 'Lines',
+          next: 'Next',
+          move: 'Move',
+          rotate: 'Rotate',
+          softDrop: 'Soft Drop',
+          hardDrop: 'Hard Drop',
+          pause: 'Pause',
+          restart: 'Restart',
+          controls: 'Controls',
+          paused: 'PAUSED',
+          resume: 'RESUME',
+          resumeLabel: 'Resume',
+          gameOver: 'GAME OVER',
+          scoreLabel: 'Score:',
+          playAgain: 'PLAY AGAIN',
+          settings: 'Settings',
+          ghost: 'Ghost object',
+          sevenBag: '7-bag',
+          langLabel: 'Language',
+          pageTitle: 'Tetris'
+        },
+        ru: {
+          score: 'Очко',
+          level: 'Уровень',
+          lines: 'Линий',
+          next: 'Следующая',
+          move: 'Перемещение',
+          rotate: 'Поворот',
+          softDrop: 'Мягкое падение',
+          hardDrop: 'Жёсткое падение',
+          pause: 'Пауза',
+          restart: 'Рестарт',
+          controls: 'Управление',
+          paused: 'Ты на ручнике',
+          resume: 'Жми на газ',
+          resumeLabel: 'Дай газу',
+          gameOver: 'Все, капец',
+          scoreLabel: 'Очки:',
+          playAgain: 'Еще по одной',
+          settings: 'На стройку',
+          ghost: 'Подсказка падения',
+          sevenBag: '7-мешок',
+          langLabel: 'Язык',
+          pageTitle: 'Тетрис'
+        },
+        bg: {
+          score: 'Точки',
+          level: 'Ниво',
+          lines: 'Редове',
+          next: 'Следваща',
+          move: 'Движение',
+          rotate: 'Завъртане',
+          softDrop: 'Бавно спускане',
+          hardDrop: 'Бързо спускане',
+          pause: 'Пауза',
+          restart: 'Рестарт',
+          controls: 'Управление',
+          paused: 'ПАУЗА',
+          resume: 'ПРОДЪЛЖИ',
+          resumeLabel: 'Продължи',
+          gameOver: 'КРАЙ НА ИГРАТА',
+          scoreLabel: 'Точки:',
+          playAgain: 'ИГРАЙ ОТНОВО',
+          settings: 'Настройки',
+          ghost: 'Подсказка за падане',
+          sevenBag: '7-чувал',
+          langLabel: 'Език',
+          pageTitle: 'Тетрис'
+        },
+        ro: {
+          score: 'Scor',
+          level: 'Nivel',
+          lines: 'Linii',
+          next: 'Următoarea',
+          move: 'Mișcare',
+          rotate: 'Rotație',
+          softDrop: 'Coborâre lentă',
+          hardDrop: 'Coborâre rapidă',
+          pause: 'Pauză',
+          restart: 'Restart',
+          controls: 'Controale',
+          paused: 'PAUZĂ',
+          resume: 'CONTINUĂ',
+          resumeLabel: 'Continuă',
+          gameOver: 'JOC TERMINAT',
+          scoreLabel: 'Scor:',
+          playAgain: 'JOACĂ DIN NOU',
+          settings: 'Setări',
+          ghost: 'Indicație cădere',
+          sevenBag: '7-sac',
+          langLabel: 'Limbă',
+          pageTitle: 'Tetris'
+        },
+        fr: {
+          score: 'Score',
+          level: 'Niveau',
+          lines: 'Lignes',
+          next: 'Suivante',
+          move: 'Déplacement',
+          rotate: 'Rotation',
+          softDrop: 'Chute lente',
+          hardDrop: 'Chute rapide',
+          pause: 'Pause',
+          restart: 'Redémarrer',
+          controls: 'Commandes',
+          paused: 'PAUSE',
+          resume: 'REPRENDRE',
+          resumeLabel: 'Reprendre',
+          gameOver: 'PARTIE TERMINÉE',
+          scoreLabel: 'Score :',
+          playAgain: 'REJOUER',
+          settings: 'Paramètres',
+          ghost: 'Ombre de chute',
+          sevenBag: '7-sac',
+          langLabel: 'Langue',
+          pageTitle: 'Tetris'
+        }
+      },
+      current: 'en',
+
+      t(key) {
+        return this.messages[this.current]?.[key] ?? key;
+      }
+    };
+
+    function detectLanguage() {
+      try {
+        const saved = localStorage.getItem(LANG_STORAGE_KEY);
+        if (saved && I18N.langs.includes(saved)) return saved;
+      } catch (_) {}
+      const detected = (navigator.language || '').slice(0, 2);
+      if (I18N.langs.includes(detected)) return detected;
+      return I18N.default;
+    }
+
+    function setLanguage(lang) {
+      if (!I18N.langs.includes(lang)) return;
+      I18N.current = lang;
+      document.documentElement.lang = lang;
+      try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (_) {}
+    }
+
+    function applyI18n() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        const attr = el.dataset.i18nAttr;
+        const text = I18N.t(key);
+        if (attr) el.setAttribute(attr, text);
+        else el.textContent = text;
+      });
+      document.title = I18N.t('pageTitle');
+    }
+
+    setLanguage(detectLanguage());
+    applyI18n();
+    document.documentElement.classList.remove('i18n-loading');
+
     // --- Constants ---
 
     const COLS = 10, ROWS = 20;
@@ -1008,6 +1236,8 @@
       _pauseBtn: null, _settingsBtn: null, _menu: null,
       _ghostToggle: null, _ghostIndicator: null,
       _sevenBagToggle: null, _sevenBagIndicator: null,
+      _langToggle: null, _langSubmenu: null,
+      _langOptions: null,
       _overlayPause: null, _overlayOver: null,
       _stats: {},
       _actionBtns: null,
@@ -1025,6 +1255,25 @@
         this._ghostIndicator = document.getElementById('ghost-indicator');
         this._sevenBagToggle = document.getElementById('sevenbag-toggle');
         this._sevenBagIndicator = document.getElementById('sevenbag-indicator');
+        this._langToggle = document.getElementById('lang-toggle');
+        this._langSubmenu = document.getElementById('lang-submenu');
+        this._langSubmenu.innerHTML = '';
+        I18N.langs.forEach(lang => {
+          const btn = document.createElement('button');
+          btn.className = 'lang-option';
+          btn.type = 'button';
+          btn.setAttribute('role', 'menuitemradio');
+          btn.dataset.lang = lang;
+          btn.setAttribute('aria-checked', 'false');
+          const indicator = document.createElement('span');
+          indicator.className = 'indicator';
+          const name = document.createElement('span');
+          name.textContent = I18N.names[lang];
+          btn.appendChild(indicator);
+          btn.appendChild(name);
+          this._langSubmenu.appendChild(btn);
+        });
+        this._langOptions = this._langSubmenu.querySelectorAll('.lang-option');
         this._overlayPause = document.getElementById('overlay-pause');
         this._overlayOver = document.getElementById('overlay-over');
         this._stats = {
@@ -1039,6 +1288,7 @@
       get ctx()        { return this._ctx; },
       get nextCtx()    { return this._nextCtx; },
       get actionBtns() { return this._actionBtns; },
+      get langOptions() { return this._langOptions; },
 
       setStat(k, v)    { this._stats[k].textContent = v; },
 
@@ -1050,7 +1300,7 @@
       },
 
       setPauseBtnVisible(v) { this._pauseBtn.classList.toggle('hidden', !v); },
-      setPauseAriaLabel(paused) { this._pauseBtn.setAttribute('aria-label', paused ? 'Resume' : 'Pause'); },
+      setPauseAriaLabel(paused) { this._pauseBtn.setAttribute('aria-label', I18N.t(paused ? 'resumeLabel' : 'pause')); },
 
       setSettingsMenuOpen(open) {
         this._menu.classList.toggle('open', open);
@@ -1058,12 +1308,44 @@
       },
       isSettingsMenuOpen() { return this._menu.classList.contains('open'); },
       closeSettingsMenu() {
+        if (this.isLangSubmenuOpen()) this.setLangSubmenuOpen(false);
+
         if (!this.isSettingsMenuOpen()) return;
         this.setSettingsMenuOpen(false);
-        this.focusSettingsBtn();
+        this.blurMenuFocus();
+      },
+      blurMenuFocus() {
+        const active = document.activeElement;
+        if (active && (this._settingsBtn.contains(active) || this._menu.contains(active))) {
+          active.blur();
+        }
       },
       focusSettingsBtn()   { this._settingsBtn.focus(); },
       focusGhostToggle()   { this._ghostToggle.focus(); },
+      focusLangToggle()      { this._langToggle.focus(); },
+
+      setLangSubmenuOpen(open) {
+        this._langSubmenu.classList.toggle('open', open);
+        this._langToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      },
+      isLangSubmenuOpen() { return this._langSubmenu.classList.contains('open'); },
+      closeLangSubmenu() {
+        if (!this.isLangSubmenuOpen()) return;
+        this.setLangSubmenuOpen(false);
+        this.focusLangToggle();
+      },
+      setActiveLangOption(lang) {
+        this._langOptions.forEach(btn => {
+          const active = btn.dataset.lang === lang;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+      },
+      updateLangToggleLabel() {
+        const name = I18N.names[I18N.current];
+        const label = I18N.t('langLabel');
+        this._langToggle.querySelector('.label').textContent = `${label}: ${name}`;
+      },
 
       _setIndicator(indicatorEl, toggleEl, on) {
         indicatorEl.classList.toggle('on', on);
@@ -1130,7 +1412,17 @@
         this._bindKeyboard();
         this._bindMobile();
         this._bindSettings();
+        this._bindLangOutsideClick();
         this._bindVisibility();
+      },
+
+      _bindLangOutsideClick() {
+        document.addEventListener('click', e => {
+          if (!view.isLangSubmenuOpen()) return;
+          if (!view._langSubmenu.contains(e.target) && !view._langToggle.contains(e.target)) {
+            view.setLangSubmenuOpen(false);
+          }
+        });
       },
 
       _bindKeyboard() {
@@ -1144,7 +1436,11 @@
 
           if (menuOpen) {
             if (e.key === 'Escape') {
-              view.closeSettingsMenu();
+              if (view.isLangSubmenuOpen()) {
+                view.closeLangSubmenu();
+              } else {
+                view.closeSettingsMenu();
+              }
               e.preventDefault();
             }
             return;
@@ -1279,6 +1575,7 @@
         view._settingsBtn.addEventListener('click', () => {
           const isOpen = view.isSettingsMenuOpen();
           if (isOpen) {
+            view.closeLangSubmenu();
             view.setSettingsMenuOpen(false);
           } else {
             if (Game.isRunning()) Lifecycle.setPaused(true);
@@ -1288,15 +1585,39 @@
         });
 
         view._ghostToggle.addEventListener('click', () => {
+          view.setLangSubmenuOpen(false);
           Settings.toggleGhost();
           view.setGhostIndicator(Settings.ghostEnabled);
         });
 
         view._sevenBagToggle.addEventListener('click', () => {
+          view.setLangSubmenuOpen(false);
           Settings.toggleSevenBag();
           view.setSevenBagIndicator(Settings.sevenBagEnabled);
           Game.bag = [];
           if (Settings.sevenBagEnabled) Game.fillBag();
+        });
+
+        view._langToggle.addEventListener('click', () => {
+          const open = view.isLangSubmenuOpen();
+          view.setLangSubmenuOpen(!open);
+          if (!open) view.langOptions[0]?.focus();
+        });
+
+        view.langOptions.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const lang = btn.dataset.lang;
+            if (!lang || lang === I18N.current) {
+              view.closeLangSubmenu();
+              return;
+            }
+            setLanguage(lang);
+            applyI18n();
+            view.setActiveLangOption(lang);
+            view.updateLangToggleLabel();
+            view.closeLangSubmenu();
+            view.setPauseAriaLabel(Game.paused);
+          });
         });
       },
 
@@ -1318,6 +1639,8 @@
         Settings.init();
         view.setGhostIndicator(Settings.ghostEnabled);
         view.setSevenBagIndicator(Settings.sevenBagEnabled);
+        view.setActiveLangOption(I18N.current);
+        view.updateLangToggleLabel();
         resize();
         Input.init();
         window.addEventListener('resize', resize);
