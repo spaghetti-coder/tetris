@@ -248,6 +248,7 @@
       position: relative;
       display: inline-block;
       line-height: 0;
+      background: #0f0f23;
     }
     #next-canvas { border: none; }
     #pause-btn {
@@ -531,7 +532,7 @@
       <div class="overlay hidden" id="overlay-pause">
         <div class="overlay-title" data-i18n="paused">PAUSED</div>
         <button class="overlay-btn" data-action="resume" type="button" data-i18n="resume">RESUME</button>
-        <button class="overlay-btn secondary" data-action="restart" type="button" data-i18n="restart">RESTART</button>
+        <button class="overlay-btn secondary" data-action="restart" data-confirm-restart type="button" data-i18n="restart">RESTART</button>
       </div>
       <div class="overlay hidden" id="overlay-over">
         <div class="overlay-title" data-i18n="gameOver">GAME OVER</div>
@@ -600,6 +601,7 @@
           hardDrop: 'Hard Drop',
           pause: 'Pause',
           restart: 'Restart',
+          confirmRestart: 'Confirm Restart',
           controls: 'Controls',
           paused: 'PAUSED',
           resume: 'RESUME',
@@ -624,6 +626,7 @@
           hardDrop: 'Жёсткое падение',
           pause: 'Пауза',
           restart: 'Рестарт',
+          confirmRestart: 'Подтвердить рестарт',
           controls: 'Управление',
           paused: 'Ты на ручнике',
           resume: 'Жми на газ',
@@ -648,6 +651,7 @@
           hardDrop: 'Бързо спускане',
           pause: 'Пауза',
           restart: 'Рестарт',
+          confirmRestart: 'Потвърди рестарт',
           controls: 'Управление',
           paused: 'ПАУЗА',
           resume: 'ПРОДЪЛЖИ',
@@ -672,6 +676,7 @@
           hardDrop: 'Coborâre rapidă',
           pause: 'Pauză',
           restart: 'Restart',
+          confirmRestart: 'Confirmă restart',
           controls: 'Controale',
           paused: 'PAUZĂ',
           resume: 'CONTINUĂ',
@@ -696,6 +701,7 @@
           hardDrop: 'Chute rapide',
           pause: 'Pause',
           restart: 'Redémarrer',
+          confirmRestart: 'Confirmer redémarrage',
           controls: 'Commandes',
           paused: 'PAUSE',
           resume: 'REPRENDRE',
@@ -1127,10 +1133,10 @@
       _ox: 0,
       _oy: 0,
 
-      trigger() {
-        this.intensity = 4;
-        this.timer = 300;
-        this.maxTimer = 300;
+      trigger(intensity = 4, duration = 300) {
+        this.intensity = intensity;
+        this.timer = duration;
+        this.maxTimer = duration;
       },
 
       update(dt) {
@@ -1159,6 +1165,40 @@
         this.maxTimer = 0;
         this._ox = 0;
         this._oy = 0;
+      },
+    };
+
+    // --- Restart confirm ---
+
+    // Two-step restart guard for RESTART button
+    const RestartConfirm = {
+      _btn: null,
+      _className: '',
+
+      isPending(btn) { return this._btn === btn; },
+
+      request(btn) {
+        this.cancel();
+        this._btn = btn;
+        this._className = btn.className;
+        btn.textContent = I18N.t('confirmRestart');
+        btn.classList.remove('secondary');
+        Shake.trigger(16);
+      },
+
+      confirm() {
+        this.cancel();
+        Lifecycle.resetGame();
+      },
+
+      cancel() {
+        if (!this._btn) return;
+        const btn = this._btn;
+        const key = btn.dataset.i18n;
+        if (key) btn.textContent = I18N.t(key);
+        btn.className = this._className;
+        this._btn = null;
+        this._className = '';
       },
     };
 
@@ -1203,10 +1243,6 @@
         ctx.fillStyle = '#0f0f23';
         ctx.fillRect(-4, -4, VIEW_W + 8, VIEW_H + 8);
 
-        const sh = Shake.offset();
-        ctx.save();
-        ctx.translate(sh.x, sh.y);
-
         this.renderBlocks(ctx, Game.grid, 0, 0, (x, y) => Game.grid[y][x], BLOCK);
 
         if (Game.current)
@@ -1250,8 +1286,6 @@
         }
 
         Particles.draw(ctx, BLOCK);
-
-        ctx.restore();
       },
     };
 
@@ -1268,6 +1302,7 @@
       _overlayPause: null, _overlayOver: null,
       _stats: {},
       _actionBtns: null,
+      _gameArea: null,
       BLOCK: 30, VIEW_W: 0, VIEW_H: 0, NEXT_W: 0, NEXT_H: 0,
 
       init() {
@@ -1310,6 +1345,7 @@
           final: document.getElementById('final-score')
         };
         this._actionBtns = document.querySelectorAll('[data-action]');
+        this._gameArea = document.querySelector('.game-area');
       },
 
       get ctx()        { return this._ctx; },
@@ -1318,6 +1354,10 @@
       get langOptions() { return this._langOptions; },
 
       setStat(k, v)    { this._stats[k].textContent = v; },
+
+      applyShake(x, y) {
+        this._gameArea.style.transform = (x || y) ? `translate(${x}px, ${y}px)` : '';
+      },
 
       showOverlay(name) {
         this._overlayPause.classList.add('hidden');
@@ -1578,9 +1618,15 @@
             view.closeSettingsMenu();
             Lifecycle.setPaused(false);
           },
-          restart: () => {
+          restart: (btn) => {
             view.closeSettingsMenu();
-            Lifecycle.resetGame();
+            if (btn.hasAttribute('data-confirm-restart')) {
+              if (RestartConfirm.isPending(btn)) RestartConfirm.confirm();
+              else RestartConfirm.request(btn);
+            } else {
+              RestartConfirm.cancel();
+              Lifecycle.resetGame();
+            }
           }
         };
 
@@ -1590,7 +1636,9 @@
           if (!fn) return;
           if (a === 'left' || a === 'right' || a === 'soft') {
             this._bindHold(btn, fn, a === 'soft');
-          } else if (a === 'pause' || a === 'resume' || a === 'restart') {
+          } else if (a === 'restart') {
+            this._bindTap(btn, () => fn(btn), false);
+          } else if (a === 'pause' || a === 'resume') {
             this._bindTap(btn, fn, false);
           } else {
             this._bindTap(btn, fn, true);
@@ -1638,6 +1686,7 @@
               view.closeLangSubmenu();
               return;
             }
+            RestartConfirm.cancel();
             setLanguage(lang);
             applyI18n();
             view.setActiveLangOption(lang);
@@ -1686,8 +1735,11 @@
         Game.tick(dt);
         Particles.update(dt);
         Shake.update(dt);
+        const o = Shake.offset();
+        view.applyShake(o.x, o.y);
 
         if (Game.gameOver) {
+          RestartConfirm.cancel();
           view.setStat('final', Game.score);
           view.showOverlay('over');
           view.setPauseBtnVisible(false);
@@ -1702,6 +1754,7 @@
       },
 
       setPaused(v) {
+        RestartConfirm.cancel();
         Game.setPaused(v);
         if (Game.gameOver) {
           view.showOverlay('over');
@@ -1717,6 +1770,7 @@
       },
 
       resetGame() {
+        RestartConfirm.cancel();
         Game.resetGame();
         view.showOverlay(null);
         view.setPauseBtnVisible(true);
