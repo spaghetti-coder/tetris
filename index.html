@@ -350,6 +350,74 @@
     .lang-option .indicator::after { content: '\25CB'; }
     .lang-option.active .indicator::after { content: '\25CF'; }
 
+    .ranking-submenu-wrapper { position: relative; }
+    #ranking-submenu {
+      position: absolute;
+      top: 0;
+      left: calc(100% + 8px);
+      z-index: 6;
+      display: none;
+      width: auto;
+      min-width: 0;
+      max-height: 140px;
+      overflow: hidden;
+      background: var(--color-glass);
+      border: 1px solid var(--color-border-light);
+      border-radius: 6px;
+      padding: 6px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+    #ranking-submenu.open { display: flex; flex-direction: column; }
+    .ranking-list {
+      overflow-y: auto;
+      flex: 1 1 auto;
+    }
+    .ranking-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      color: var(--color-text);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .ranking-row .rank { color: var(--color-accent); min-width: 1.5em; }
+    .ranking-row.highlight { color: var(--color-accent); font-weight: bold; }
+    .ranking-empty {
+      padding: 10px 12px;
+      color: var(--color-text);
+      font-size: 14px;
+      white-space: nowrap;
+      opacity: 0.7;
+    }
+    .ranking-clear {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 10px 12px;
+      margin-top: 4px;
+      background: transparent;
+      border: none;
+      border-top: 1px solid var(--color-border-light);
+      color: var(--color-accent);
+      font: inherit;
+      font-size: 14px;
+      justify-content: center;
+      text-align: center;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .ranking-clear:hover,
+    .ranking-clear:focus-visible { background: var(--color-accent-glow); }
+    .ranking-clear.confirming {
+      background: var(--color-accent);
+      color: var(--color-overlay-btn-text);
+      border-top-color: var(--color-accent);
+    }
+    .ranking-clear.confirming:hover,
+    .ranking-clear.confirming:focus-visible { background: var(--color-accent-dark); }
+
     /* --- Overlays --- */
     .overlay {
       position: absolute;
@@ -526,6 +594,13 @@
           <div id="lang-submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
           </div>
         </div>
+        <div class="ranking-submenu-wrapper">
+          <button id="ranking-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
+            <i class="fa-solid fa-trophy icon" aria-hidden="true"></i>
+            <span class="label" data-i18n="ranking">Ranking</span>
+          </button>
+          <div id="ranking-submenu" role="group" data-i18n="ranking" data-i18n-attr="aria-label" aria-label="Ranking"></div>
+        </div>
       </div>
       <button id="pause-btn" class="icon-btn" data-action="pause" type="button" data-i18n="pause" data-i18n-attr="aria-label" aria-label="Pause"><i class="fa-solid fa-pause icon-pause" aria-hidden="true"></i><i class="fa-solid fa-play icon-play" aria-hidden="true"></i></button>
       <canvas id="board"></canvas>
@@ -536,7 +611,13 @@
       </div>
       <div class="overlay hidden" id="overlay-over">
         <div class="overlay-title" data-i18n="gameOver">GAME OVER</div>
-        <div class="overlay-score"><span data-i18n="scoreLabel">Score:</span> <b id="final-score">0</b></div>
+        <div class="overlay-score hidden" id="over-msg">
+          <span class="hidden" id="over-msg-soclose" data-i18n="soClose">So Close!</span>
+          <span class="hidden" id="over-msg-youcan" data-i18n="youCanBetter">You can better!</span>
+        </div>
+        <div class="overlay-score hidden" id="over-yourscore"><span data-i18n="yourScore">Your Score:</span> <b id="over-your">0</b></div>
+        <div class="overlay-score hidden" id="over-bestline"><span data-i18n="bestScore">Best Score:</span> <b id="over-bestline-val">0</b></div>
+        <div class="overlay-score hidden" id="over-prevbest"><span data-i18n="previousBest">Previous Best:</span> <b id="over-prev">0</b></div>
         <button class="overlay-btn" data-action="restart" type="button" data-i18n="playAgain">PLAY AGAIN</button>
       </div>
     </div>
@@ -607,12 +688,20 @@
           resume: 'RESUME',
           resumeLabel: 'Resume',
           gameOver: 'GAME OVER',
-          scoreLabel: 'Score:',
           playAgain: 'PLAY AGAIN',
           settings: 'Settings',
           ghost: 'Ghost object',
           sevenBag: '7-bag',
           langLabel: 'Language',
+          ranking: 'Ranking',
+          bestScore: 'Best Score:',
+          previousBest: 'Previous Best:',
+          youCanBetter: 'You can better!',
+          soClose: 'So Close!',
+          yourScore: 'Your Score:',
+          clear: 'Clear',
+          confirmClear: 'Confirm Clear',
+          noRecords: 'No records yet',
           pageTitle: 'Tetris'
         },
         ru: {
@@ -632,12 +721,20 @@
           resume: 'Жми на газ',
           resumeLabel: 'Дай газу',
           gameOver: 'Все, капец',
-          scoreLabel: 'Очки:',
           playAgain: 'Еще по одной',
           settings: 'На стройку',
           ghost: 'Подсказка падения',
           sevenBag: '7-мешок',
           langLabel: 'Язык',
+          ranking: 'Рекорды',
+          bestScore: 'Рекорд:',
+          previousBest: 'Прежний рекорд:',
+          youCanBetter: 'Лошара!',
+          soClose: 'Ого, почти!',
+          yourScore: 'Твой счёт:',
+          clear: 'Очистить',
+          confirmClear: 'Подтвердить очистку',
+          noRecords: 'Пока пусто',
           pageTitle: 'Тетрис'
         },
         bg: {
@@ -657,12 +754,20 @@
           resume: 'ПРОДЪЛЖИ',
           resumeLabel: 'Продължи',
           gameOver: 'КРАЙ НА ИГРАТА',
-          scoreLabel: 'Точки:',
           playAgain: 'ИГРАЙ ОТНОВО',
           settings: 'Настройки',
           ghost: 'Подсказка за падане',
           sevenBag: '7-чувал',
           langLabel: 'Език',
+          ranking: 'Рекорди',
+          bestScore: 'Рекорд:',
+          previousBest: 'Предишен рекорд:',
+          youCanBetter: 'Може и по-добре!',
+          soClose: 'Тъй близо!',
+          yourScore: 'Твоят резултат:',
+          clear: 'Изчисти',
+          confirmClear: 'Потвърди изчистване',
+          noRecords: 'Все още няма записи',
           pageTitle: 'Тетрис'
         },
         ro: {
@@ -682,12 +787,20 @@
           resume: 'CONTINUĂ',
           resumeLabel: 'Continuă',
           gameOver: 'JOC TERMINAT',
-          scoreLabel: 'Scor:',
           playAgain: 'JOACĂ DIN NOU',
           settings: 'Setări',
           ghost: 'Indicație cădere',
           sevenBag: '7-sac',
           langLabel: 'Limbă',
+          ranking: 'Clasament',
+          bestScore: 'Cel mai bun scor:',
+          previousBest: 'Scor anterior:',
+          youCanBetter: 'Poți și mai bine!',
+          soClose: 'Așa de aproape!',
+          yourScore: 'Scorul tău:',
+          clear: 'Șterge',
+          confirmClear: 'Confirmă ștergerea',
+          noRecords: 'Nicio înregistrare încă',
           pageTitle: 'Tetris'
         },
         fr: {
@@ -707,12 +820,20 @@
           resume: 'REPRENDRE',
           resumeLabel: 'Reprendre',
           gameOver: 'PARTIE TERMINÉE',
-          scoreLabel: 'Score :',
           playAgain: 'REJOUER',
           settings: 'Paramètres',
           ghost: 'Ombre de chute',
           sevenBag: '7-sac',
           langLabel: 'Langue',
+          ranking: 'Classement',
+          bestScore: 'Meilleur score :',
+          previousBest: 'Précédent record :',
+          youCanBetter: 'Tu peux mieux faire !',
+          soClose: 'Si proche !',
+          yourScore: 'Ton score :',
+          clear: 'Effacer',
+          confirmClear: 'Confirmer l\'effacement',
+          noRecords: 'Pas encore de records',
           pageTitle: 'Tetris'
         }
       },
@@ -1202,6 +1323,42 @@
       },
     };
 
+    // --- Clear confirm ---
+
+    // Two-step clear guard for ranking Clear button (mirrors RestartConfirm)
+    const ClearConfirm = {
+      _btn: null,
+      _className: '',
+
+      isPending(btn) { return this._btn === btn; },
+
+      request(btn) {
+        this.cancel();
+        this._btn = btn;
+        this._className = btn.className;
+        btn.textContent = I18N.t('confirmClear');
+        btn.classList.add('confirming');
+        Shake.trigger(16);
+      },
+
+      confirm() {
+        this.cancel();
+        Scores.clear();
+        view.renderRanking();
+        Lifecycle.rerenderGameOver();
+      },
+
+      cancel() {
+        if (!this._btn) return;
+        const btn = this._btn;
+        const key = btn.dataset.i18n;
+        if (key) btn.textContent = I18N.t(key);
+        btn.className = this._className;
+        this._btn = null;
+        this._className = '';
+      },
+    };
+
     // --- Rendering ---
 
     const Render = {
@@ -1336,14 +1493,24 @@
           this._langSubmenu.appendChild(btn);
         });
         this._langOptions = this._langSubmenu.querySelectorAll('.lang-option');
+        this._rankingToggle = document.getElementById('ranking-toggle');
+        this._rankingSubmenu = document.getElementById('ranking-submenu');
         this._overlayPause = document.getElementById('overlay-pause');
         this._overlayOver = document.getElementById('overlay-over');
         this._stats = {
           score: document.getElementById('score'),
           level: document.getElementById('level'),
-          lines: document.getElementById('lines'),
-          final: document.getElementById('final-score')
+          lines: document.getElementById('lines')
         };
+        this._overMsg = document.getElementById('over-msg');
+        this._overMsgSoClose = document.getElementById('over-msg-soclose');
+        this._overMsgYouCan = document.getElementById('over-msg-youcan');
+        this._overYourscore = document.getElementById('over-yourscore');
+        this._overYour = document.getElementById('over-your');
+        this._overBestline = document.getElementById('over-bestline');
+        this._overBestlineVal = document.getElementById('over-bestline-val');
+        this._overPrevbest = document.getElementById('over-prevbest');
+        this._overPrev = document.getElementById('over-prev');
         this._actionBtns = document.querySelectorAll('[data-action]');
         this._gameArea = document.querySelector('.game-area');
       },
@@ -1366,6 +1533,31 @@
         else if (name === 'over') this._overlayOver.classList.remove('hidden');
       },
 
+      renderGameOver(state, score, prevBest) {
+        const hide = el => el.classList.add('hidden');
+        const show = el => el.classList.remove('hidden');
+        hide(this._overMsg); hide(this._overMsgSoClose); hide(this._overMsgYouCan);
+        hide(this._overYourscore); hide(this._overBestline); hide(this._overPrevbest);
+        if (state === 'newBest') {
+          this._overBestlineVal.textContent = score;
+          show(this._overBestline);
+          if (prevBest !== null) {
+            this._overPrev.textContent = prevBest;
+            show(this._overPrevbest);
+          }
+        } else if (state === 'tiedBest') {
+          show(this._overMsg); show(this._overMsgSoClose);
+          this._overYour.textContent = score; show(this._overYourscore);
+          this._overBestlineVal.textContent = prevBest; show(this._overBestline);
+        } else if (state === 'notBest') {
+          show(this._overMsg); show(this._overMsgYouCan);
+          this._overYour.textContent = score; show(this._overYourscore);
+          this._overBestlineVal.textContent = prevBest; show(this._overBestline);
+        } else { // noBest
+          this._overYour.textContent = score; show(this._overYourscore);
+        }
+      },
+
       setPauseBtnVisible(v) { this._pauseBtn.classList.toggle('hidden', !v); },
       setPauseAriaLabel(paused) { this._pauseBtn.setAttribute('aria-label', I18N.t(paused ? 'resumeLabel' : 'pause')); },
 
@@ -1376,6 +1568,7 @@
       isSettingsMenuOpen() { return this._menu.classList.contains('open'); },
       closeSettingsMenu() {
         if (this.isLangSubmenuOpen()) this.setLangSubmenuOpen(false);
+        this.closeRankingSubmenu();
 
         if (!this.isSettingsMenuOpen()) return;
         this.setSettingsMenuOpen(false);
@@ -1412,6 +1605,60 @@
         const name = I18N.names[I18N.current];
         const label = I18N.t('langLabel');
         this._langToggle.querySelector('.label').textContent = `${label}: ${name}`;
+      },
+
+      setRankingSubmenuOpen(open) {
+        this._rankingSubmenu.classList.toggle('open', open);
+        this._rankingToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      },
+      isRankingSubmenuOpen() { return this._rankingSubmenu.classList.contains('open'); },
+      closeRankingSubmenu() {
+        if (!this.isRankingSubmenuOpen()) return;
+        ClearConfirm.cancel();
+        this.setRankingSubmenuOpen(false);
+        this._rankingToggle.focus();
+      },
+
+      renderRanking() {
+        const sub = this._rankingSubmenu;
+        sub.innerHTML = '';
+        const scores = Scores.all();
+        const list = document.createElement('div');
+        list.className = 'ranking-list';
+        if (!scores.length) {
+          const empty = document.createElement('div');
+          empty.className = 'ranking-empty';
+          empty.textContent = I18N.t('noRecords');
+          list.appendChild(empty);
+          sub.appendChild(list);
+          return;
+        }
+        scores.forEach((s, i) => {
+          const row = document.createElement('div');
+          row.className = 'ranking-row';
+          if (s === Scores.lastRecorded) row.classList.add('highlight');
+          const rank = document.createElement('span');
+          rank.className = 'rank';
+          rank.textContent = (i + 1) + '.';
+          const val = document.createElement('span');
+          val.className = 'score';
+          val.textContent = s;
+          row.appendChild(rank);
+          row.appendChild(val);
+          list.appendChild(row);
+        });
+        sub.appendChild(list);
+        list.scrollTop = 0;
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'ranking-clear';
+        clear.dataset.i18n = 'clear';
+        clear.textContent = I18N.t('clear');
+        clear.addEventListener('click', () => {
+          if (ClearConfirm.isPending(clear)) ClearConfirm.confirm();
+          else ClearConfirm.request(clear);
+        });
+        sub.appendChild(clear);
       },
 
       _setIndicator(indicatorEl, toggleEl, on) {
@@ -1472,6 +1719,53 @@
       toggleSevenBag() { this._toggle('sevenBagEnabled', SEVENBAG_STORAGE_KEY); },
     };
 
+    // --- Scores ---
+
+    const Scores = {
+      KEY: 'tetris.scores.best',
+      MAX: 20,
+      _scores: [],
+      lastRecorded: null,
+
+      load() {
+        try {
+          const raw = JSON.parse(localStorage.getItem(this.KEY));
+          this._scores = Array.isArray(raw)
+            ? raw.filter(n => Number.isInteger(n) && n > 0)
+                .filter((n, i, a) => a.indexOf(n) === i)
+                .sort((a, b) => b - a)
+                .slice(0, this.MAX)
+            : [];
+        } catch (_) { this._scores = []; }
+      },
+
+      all()       { return this._scores; },
+      best()      { return this._scores[0] ?? null; },
+      contains(s) { return this._scores.includes(s); },
+
+      clear() {
+        this._scores = [];
+        try { localStorage.removeItem(this.KEY); } catch (_) {}
+        this.lastRecorded = null;
+      },
+
+      record(score) {
+        if (!Number.isInteger(score) || score <= 0) return false;
+        if (this.contains(score)) return false;
+        if (this._scores.length >= this.MAX && score <= this._scores[this.MAX - 1]) return false;
+        this._scores.push(score);
+        this._scores.sort((a, b) => b - a);
+        this._scores = this._scores.slice(0, this.MAX);
+        this._save();
+        this.lastRecorded = score;
+        return true;
+      },
+
+      _save() {
+        try { localStorage.setItem(this.KEY, JSON.stringify(this._scores)); } catch (_) {}
+      },
+    };
+
     // --- Input ---
 
     const Input = {
@@ -1479,14 +1773,20 @@
         this._bindKeyboard();
         this._bindMobile();
         this._bindSettings();
-        this._bindLangOutsideClick();
+        this._bindOutsideClick();
         this._bindVisibility();
       },
 
-      _bindLangOutsideClick() {
+      _bindOutsideClick() {
         document.addEventListener('click', e => {
-          if (!view.isLangSubmenuOpen()) return;
-          if (!view._langSubmenu.contains(e.target) && !view._langToggle.contains(e.target)) {
+          if (view.isRankingSubmenuOpen()
+              && !view._rankingSubmenu.contains(e.target)
+              && !view._rankingToggle.contains(e.target)) {
+            view.closeRankingSubmenu();
+          }
+          if (view.isLangSubmenuOpen()
+              && !view._langSubmenu.contains(e.target)
+              && !view._langToggle.contains(e.target)) {
             view.setLangSubmenuOpen(false);
           }
         });
@@ -1503,11 +1803,9 @@
 
           if (menuOpen) {
             if (e.key === 'Escape') {
-              if (view.isLangSubmenuOpen()) {
-                view.closeLangSubmenu();
-              } else {
-                view.closeSettingsMenu();
-              }
+              if (view.isRankingSubmenuOpen()) view.closeRankingSubmenu();
+              else if (view.isLangSubmenuOpen()) view.closeLangSubmenu();
+              else view.closeSettingsMenu();
               e.preventDefault();
             }
             return;
@@ -1661,12 +1959,14 @@
 
         view._ghostToggle.addEventListener('click', () => {
           view.setLangSubmenuOpen(false);
+          view.closeRankingSubmenu();
           Settings.toggleGhost();
           view.setGhostIndicator(Settings.ghostEnabled);
         });
 
         view._sevenBagToggle.addEventListener('click', () => {
           view.setLangSubmenuOpen(false);
+          view.closeRankingSubmenu();
           Settings.toggleSevenBag();
           view.setSevenBagIndicator(Settings.sevenBagEnabled);
           Game.bag = [];
@@ -1674,13 +1974,25 @@
         });
 
         view._langToggle.addEventListener('click', () => {
+          view.closeRankingSubmenu();
           const open = view.isLangSubmenuOpen();
           view.setLangSubmenuOpen(!open);
           if (!open) view.langOptions[0]?.focus();
         });
 
+        view._rankingToggle.addEventListener('click', () => {
+          view.closeLangSubmenu();
+          const open = view.isRankingSubmenuOpen();
+          view.setRankingSubmenuOpen(!open);
+          if (!open) {
+            view.renderRanking();
+            view._rankingSubmenu.querySelector('.ranking-clear')?.focus();
+          }
+        });
+
         view.langOptions.forEach(btn => {
           btn.addEventListener('click', () => {
+            view.closeRankingSubmenu();
             const lang = btn.dataset.lang;
             if (!lang || lang === I18N.current) {
               view.closeLangSubmenu();
@@ -1708,11 +2020,13 @@
 
     const Lifecycle = {
       _lastTime: 0,
+      _overHandled: false,
       _rafId: 0,
 
       init() {
         view.init();
         Settings.init();
+        Scores.load();
         view.setGhostIndicator(Settings.ghostEnabled);
         view.setSevenBagIndicator(Settings.sevenBagEnabled);
         view.setActiveLangOption(I18N.current);
@@ -1740,7 +2054,10 @@
 
         if (Game.gameOver) {
           RestartConfirm.cancel();
-          view.setStat('final', Game.score);
+          if (!this._overHandled) {
+            this._overHandled = true;
+            this._handleGameOver();
+          }
           view.showOverlay('over');
           view.setPauseBtnVisible(false);
         }
@@ -1755,6 +2072,7 @@
 
       setPaused(v) {
         RestartConfirm.cancel();
+        ClearConfirm.cancel();
         Game.setPaused(v);
         if (Game.gameOver) {
           view.showOverlay('over');
@@ -1769,8 +2087,29 @@
         this.setPaused(!Game.paused);
       },
 
+      _handleGameOver(forceNoBest = false) {
+        Scores.lastRecorded = null;
+        const score = Game.score;
+        const prevBest = Scores.best();
+        let state;
+        if (forceNoBest) {
+          state = 'noBest';
+        } else {
+          Scores.record(score);
+          if (prevBest === null && score <= 0) state = 'noBest';
+          else if (prevBest === null || score > prevBest) state = 'newBest';
+          else if (score === prevBest) state = 'tiedBest';
+          else state = 'notBest';
+        }
+        view.renderGameOver(state, score, prevBest);
+      },
+
+      rerenderGameOver() { this._handleGameOver(true); },
+
       resetGame() {
         RestartConfirm.cancel();
+        ClearConfirm.cancel();
+        this._overHandled = false;
         Game.resetGame();
         view.showOverlay(null);
         view.setPauseBtnVisible(true);
