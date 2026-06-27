@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" id="fa-primary" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <noscript><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.7.2/css/all.css"></noscript>
   <title>Tetris</title>
   <style>
     .i18n-loading body { visibility: hidden; }
@@ -547,6 +548,32 @@
   </div>
 
   <script>
+    (() => {
+      const FALLBACK_URL = 'https://use.fontawesome.com/releases/v6.7.2/css/all.css';
+      const FA_FONT = '900 1em "Font Awesome 6 Free"';
+      const primary = document.getElementById('fa-primary');
+      let added = false;
+      let primaryLoaded = false;
+      const addFallback = () => {
+        if (added) return;
+        added = true;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = FALLBACK_URL;
+        document.head.appendChild(link);
+      };
+      const isLoaded = () => {
+        if (!primaryLoaded) return false;
+        try { return document.fonts.check(FA_FONT); } catch (_) {}
+        return false;
+      };
+      if (!primary) { addFallback(); return; }
+      primary.onload = () => { primaryLoaded = true; };
+      primary.onerror = addFallback;
+      setTimeout(() => { if (!primaryLoaded) addFallback(); }, 5000);
+      document.fonts?.ready?.then(() => { if (!isLoaded()) addFallback(); });
+    })();
+
     // --- I18N ---
 
     const LANG_STORAGE_KEY = 'tetris.lang';
