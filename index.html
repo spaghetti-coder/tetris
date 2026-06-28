@@ -313,8 +313,8 @@
       border-bottom-color: var(--color-accent);
     }
 
-    .lang-submenu-wrapper { position: relative; }
-    #lang-submenu {
+    .submenu-wrapper { position: relative; }
+    .submenu {
       position: absolute;
       top: 0;
       left: calc(100% + 8px);
@@ -322,13 +322,15 @@
       display: none;
       width: auto;
       min-width: 0;
-      max-height: 240px;
-      overflow-y: auto;
       background: var(--color-glass);
       border: 1px solid var(--color-border-light);
       border-radius: 6px;
       padding: 6px 0;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+    #lang-submenu {
+      max-height: 240px;
+      overflow-y: auto;
     }
     #lang-submenu.open { display: block; }
     .lang-option {
@@ -355,22 +357,9 @@
     .lang-option .indicator::after { content: '\25CB'; }
     .lang-option.active .indicator::after { content: '\25CF'; }
 
-    .ranking-submenu-wrapper { position: relative; }
     #ranking-submenu {
-      position: absolute;
-      top: 0;
-      left: calc(100% + 8px);
-      z-index: 6;
-      display: none;
-      width: auto;
-      min-width: 0;
       max-height: 140px;
       overflow: hidden;
-      background: var(--color-glass);
-      border: 1px solid var(--color-border-light);
-      border-radius: 6px;
-      padding: 6px 0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
     #ranking-submenu.open { display: flex; flex-direction: column; }
     .ranking-list {
@@ -601,20 +590,20 @@
           <span class="indicator" id="sevenbag-indicator"></span>
           <span class="label" data-i18n="sevenBag">7-bag</span>
         </button>
-        <div class="lang-submenu-wrapper">
+        <div class="submenu-wrapper">
           <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
             <i class="fa-solid fa-language icon" aria-hidden="true"></i>
             <span class="label">Language</span>
           </button>
-          <div id="lang-submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
+          <div id="lang-submenu" class="submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
           </div>
         </div>
-        <div class="ranking-submenu-wrapper">
+        <div class="submenu-wrapper">
           <button id="ranking-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
             <i class="fa-solid fa-trophy icon" aria-hidden="true"></i>
             <span class="label" data-i18n="ranking">Ranking</span>
           </button>
-          <div id="ranking-submenu" role="group" data-i18n="ranking" data-i18n-attr="aria-label" aria-label="Ranking"></div>
+          <div id="ranking-submenu" class="submenu" role="group" data-i18n="ranking" data-i18n-attr="aria-label" aria-label="Ranking"></div>
         </div>
       </div>
       <button id="pause-btn" class="icon-btn" data-action="pause" type="button" data-i18n="pause" data-i18n-attr="aria-label" aria-label="Pause"><i class="fa-solid fa-pause icon-pause" aria-hidden="true"></i><i class="fa-solid fa-play icon-play" aria-hidden="true"></i></button>
@@ -1326,75 +1315,58 @@
       },
     };
 
-    // --- Restart confirm ---
+    // --- Confirm factory ---
 
-    // Two-step restart guard for RESTART button
-    const RestartConfirm = {
-      _btn: null,
-      _className: '',
+    // Two-step confirm guard: request once, confirm or cancel.
+    function createTwoStepConfirm({ confirmKey, applyVisual, revertVisual, onConfirm }) {
+      let btn = null;
+      let className = '';
 
-      isPending(btn) { return this._btn === btn; },
+      return {
+        isPending(candidate) { return btn === candidate; },
 
-      request(btn) {
-        this.cancel();
-        this._btn = btn;
-        this._className = btn.className;
-        btn.textContent = I18N.t('confirmRestart');
-        btn.classList.remove('secondary');
-        Shake.trigger(16);
-      },
+        request(candidate) {
+          this.cancel();
+          btn = candidate;
+          className = candidate.className;
+          candidate.textContent = I18N.t(confirmKey);
+          if (applyVisual) applyVisual(candidate);
+          Shake.trigger(16);
+        },
 
-      confirm() {
-        this.cancel();
-        Lifecycle.resetGame();
-      },
+        confirm() {
+          this.cancel();
+          onConfirm();
+        },
 
-      cancel() {
-        if (!this._btn) return;
-        const btn = this._btn;
-        const key = btn.dataset.i18n;
-        if (key) btn.textContent = I18N.t(key);
-        btn.className = this._className;
-        this._btn = null;
-        this._className = '';
-      },
-    };
+        cancel() {
+          if (!btn) return;
+          const key = btn.dataset.i18n;
+          if (key) btn.textContent = I18N.t(key);
+          if (revertVisual) revertVisual(btn, className);
+          else btn.className = className;
+          btn = null;
+          className = '';
+        },
+      };
+    }
 
-    // --- Clear confirm ---
+    const RestartConfirm = createTwoStepConfirm({
+      confirmKey: 'confirmRestart',
+      applyVisual: (btn) => btn.classList.remove('secondary'),
+      onConfirm: () => Lifecycle.resetGame(),
+    });
 
-    // Two-step clear guard for ranking Clear button (mirrors RestartConfirm)
-    const ClearConfirm = {
-      _btn: null,
-      _className: '',
-
-      isPending(btn) { return this._btn === btn; },
-
-      request(btn) {
-        this.cancel();
-        this._btn = btn;
-        this._className = btn.className;
-        btn.textContent = I18N.t('confirmClear');
-        btn.classList.add('confirming');
-        Shake.trigger(16);
-      },
-
-      confirm() {
-        this.cancel();
+    const ClearConfirm = createTwoStepConfirm({
+      confirmKey: 'confirmClear',
+      applyVisual: (btn) => btn.classList.add('confirming'),
+      revertVisual: (btn) => btn.classList.remove('confirming'),
+      onConfirm: () => {
         Scores.clear();
         view.renderRanking();
         Lifecycle.rerenderGameOver();
       },
-
-      cancel() {
-        if (!this._btn) return;
-        const btn = this._btn;
-        const key = btn.dataset.i18n;
-        if (key) btn.textContent = I18N.t(key);
-        btn.className = this._className;
-        this._btn = null;
-        this._className = '';
-      },
-    };
+    });
 
     // --- Rendering ---
 
@@ -1816,17 +1788,23 @@
 
       _bindOutsideClick() {
         document.addEventListener('click', e => {
-          if (view.isRankingSubmenuOpen()
-              && !view._rankingSubmenu.contains(e.target)
-              && !view._rankingToggle.contains(e.target)) {
-            view.closeRankingSubmenu();
-          }
-          if (view.isLangSubmenuOpen()
-              && !view._langSubmenu.contains(e.target)
-              && !view._langToggle.contains(e.target)) {
-            view.setLangSubmenuOpen(false);
-          }
+          this._closeSubmenuOnOutsideClick(
+            e, view._rankingSubmenu, view._rankingToggle,
+            view.isRankingSubmenuOpen.bind(view),
+            view.closeRankingSubmenu.bind(view)
+          );
+          this._closeSubmenuOnOutsideClick(
+            e, view._langSubmenu, view._langToggle,
+            view.isLangSubmenuOpen.bind(view),
+            view.closeLangSubmenu.bind(view)
+          );
         });
+      },
+
+      _closeSubmenuOnOutsideClick(e, submenuEl, toggleEl, isOpenFn, closeFn) {
+        if (!isOpenFn()) return;
+        if (submenuEl.contains(e.target) || toggleEl.contains(e.target)) return;
+        closeFn();
       },
 
       _bindKeyboard() {
