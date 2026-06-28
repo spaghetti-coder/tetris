@@ -906,50 +906,6 @@
     const GHOST_STORAGE_KEY = 'tetris.ghost.enabled';
     const SEVENBAG_STORAGE_KEY = 'tetris.sevenbag.enabled';
 
-    function positionHardDropBtn() {
-      const btn = document.getElementById('hard-drop-btn');
-      if (!btn) return;
-      const isMobile = window.innerWidth <= 768;
-      if (!isMobile) return;
-      const isLandscape = window.innerWidth > window.innerHeight;
-      const canvas = document.getElementById('board');
-      const wrapper = document.querySelector('.wrapper');
-      const canvasRect = canvas.getBoundingClientRect();
-      const wrapperRect = wrapper.getBoundingClientRect();
-      btn.style.bottom = (wrapperRect.bottom - canvasRect.bottom) + 'px';
-      if (isLandscape) {
-        btn.style.left = '0px';
-        btn.style.right = 'auto';
-      } else {
-        btn.style.right = '0px';
-        btn.style.left = 'auto';
-      }
-    }
-
-    function resize() {
-      const ratio = window.devicePixelRatio;
-      const isMobile = window.innerWidth <= 768;
-      const isLandscape = isMobile && window.innerWidth > window.innerHeight;
-      let maxW = 320, availableH = 700;
-      if (isLandscape) {
-        maxW = (window.innerWidth - 220) / 2;
-        availableH = window.innerHeight - 80;
-      } else if (isMobile) {
-        maxW = window.innerWidth - 16;
-        availableH = window.innerHeight - 260;
-      }
-      view.BLOCK = Math.max(15, Math.floor(Math.min(maxW / COLS, availableH / ROWS)));
-      view.VIEW_W = view.BLOCK * COLS;
-      view.VIEW_H = view.BLOCK * ROWS;
-
-      view.resizeCanvas(view.VIEW_W, view.VIEW_H, ratio);
-
-      view.NEXT_W = isMobile ? 50 : 120;
-      view.NEXT_H = isMobile ? 40 : 83;
-      view.resizeNextCanvas(view.NEXT_W, view.NEXT_H, ratio);
-      positionHardDropBtn();
-    }
-
     // --- Game ---
 
     const randInt = (() => {
@@ -1469,6 +1425,8 @@
       _stats: {},
       _actionBtns: null,
       _gameArea: null,
+      _hardDropBtn: null,
+      _wrapper: null,
       BLOCK: 30, VIEW_W: 0, VIEW_H: 0, NEXT_W: 0, NEXT_H: 0,
 
       init() {
@@ -1476,6 +1434,8 @@
         this._ctx = this._canvas.getContext('2d');
         this._nextCanvas = document.getElementById('next-canvas');
         this._nextCtx = this._nextCanvas.getContext('2d');
+        this._hardDropBtn = document.getElementById('hard-drop-btn');
+        this._wrapper = document.querySelector('.wrapper');
         this._pauseBtn = document.getElementById('pause-btn');
         this._settingsBtn = document.getElementById('settings-btn');
         this._menu = document.getElementById('settings-menu');
@@ -1693,6 +1653,47 @@
 
       resizeCanvas(w, h, ratio)     { this._resizeCanvas(this._canvas,    this._ctx,    w, h, ratio); },
       resizeNextCanvas(w, h, ratio) { this._resizeCanvas(this._nextCanvas, this._nextCtx, w, h, ratio); },
+
+      positionHardDropBtn() {
+        if (!this._hardDropBtn) return;
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) return;
+        const isLandscape = window.innerWidth > window.innerHeight;
+        const canvasRect = this._canvas.getBoundingClientRect();
+        const wrapperRect = this._wrapper.getBoundingClientRect();
+        this._hardDropBtn.style.bottom = (wrapperRect.bottom - canvasRect.bottom) + 'px';
+        if (isLandscape) {
+          this._hardDropBtn.style.left = '0px';
+          this._hardDropBtn.style.right = 'auto';
+        } else {
+          this._hardDropBtn.style.right = '0px';
+          this._hardDropBtn.style.left = 'auto';
+        }
+      },
+
+      resize() {
+        const ratio = window.devicePixelRatio;
+        const isMobile = window.innerWidth <= 768;
+        const isLandscape = isMobile && window.innerWidth > window.innerHeight;
+        let maxW = 320, availableH = 700;
+        if (isLandscape) {
+          maxW = (window.innerWidth - 220) / 2;
+          availableH = window.innerHeight - 80;
+        } else if (isMobile) {
+          maxW = window.innerWidth - 16;
+          availableH = window.innerHeight - 260;
+        }
+        this.BLOCK = Math.max(15, Math.floor(Math.min(maxW / COLS, availableH / ROWS)));
+        this.VIEW_W = this.BLOCK * COLS;
+        this.VIEW_H = this.BLOCK * ROWS;
+
+        this.resizeCanvas(this.VIEW_W, this.VIEW_H, ratio);
+
+        this.NEXT_W = isMobile ? 50 : 120;
+        this.NEXT_H = isMobile ? 40 : 83;
+        this.resizeNextCanvas(this.NEXT_W, this.NEXT_H, ratio);
+        this.positionHardDropBtn();
+      },
     };
 
     // --- Settings ---
@@ -2046,10 +2047,10 @@
         view.setSevenBagIndicator(Settings.sevenBagEnabled);
         view.setActiveLangOption(I18N.current);
         view.updateLangToggleLabel();
-        resize();
+        view.resize();
         Input.init();
-        window.addEventListener('resize', resize);
-        window.addEventListener('orientationchange', () => setTimeout(resize, 100));
+        window.addEventListener('resize', () => view.resize());
+        window.addEventListener('orientationchange', () => setTimeout(() => view.resize(), 100));
         this.resetGame();
       },
 
