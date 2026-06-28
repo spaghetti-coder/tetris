@@ -1020,12 +1020,12 @@
         return r;
       },
 
-      collides(b, offsetX, offsetY) {
+      collides(b, baseX, baseY, offsetX, offsetY) {
         for (let y = 0; y < b.length; y++)
           for (let x = 0; x < b[y].length; x++)
             if (b[y][x]) {
-              const nx = this.current.x + x + offsetX;
-              const ny = this.current.y + y + offsetY;
+              const nx = baseX + x + offsetX;
+              const ny = baseY + y + offsetY;
               if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
               if (ny >= 0 && this.grid[ny][nx]) return true;
             }
@@ -1034,7 +1034,7 @@
 
       drop() {
         this.tryLock();
-        if (!this.collides(this.current.blocks, 0, 1)) {
+        if (!this.collides(this.current.blocks, this.current.x, this.current.y, 0, 1)) {
           this.current.y++;
           this.score += 1;
           this.resetLock();
@@ -1043,7 +1043,7 @@
       },
 
       hardDrop() {
-        while (!this.collides(this.current.blocks, 0, 1)) {
+        while (!this.collides(this.current.blocks, this.current.x, this.current.y, 0, 1)) {
           this.current.y++;
           this.score += 2;
         }
@@ -1053,7 +1053,7 @@
       },
 
       move(dir) {
-        if (this.collides(this.current.blocks, dir, 0)) return;
+        if (this.collides(this.current.blocks, this.current.x, this.current.y, dir, 0)) return;
         this.current.x += dir;
         this.resetLock();
         this.tryLock();
@@ -1063,7 +1063,7 @@
         const rotated = this.rotate(this.current.blocks);
         const kicks = [0, -1, 1, -2, 2];
         for (const k of kicks) {
-          if (this.collides(rotated, k, 0)) continue;
+          if (this.collides(rotated, this.current.x, this.current.y, k, 0)) continue;
           this.current.blocks = rotated;
           this.current.x += k;
           this.resetLock();
@@ -1074,7 +1074,7 @@
 
       tryLock() {
         if (this.lockTimer || !this.current) return;
-        if (this.collides(this.current.blocks, 0, 1)) {
+        if (this.collides(this.current.blocks, this.current.x, this.current.y, 0, 1)) {
           this.lockTimer = setTimeout(() => {
             this.lockTimer = null;
             if (this.isPlayable()) this.lock();
@@ -1099,7 +1099,7 @@
         this.current = this.next;
         this.next = this.randomPiece();
         if (this.softDropActive) this.suppressSoftDrop = true;
-        if (this.collides(this.current.blocks, 0, 0)) this.endGame();
+        if (this.collides(this.current.blocks, this.current.x, this.current.y, 0, 0)) this.endGame();
       },
 
       clearLines() {
@@ -1133,7 +1133,7 @@
       computeGhostY() {
         if (!this.current) return 0;
         let y = this.current.y;
-        while (!this.collides(this.current.blocks, 0, y - this.current.y + 1)) y++;
+        while (!this.collides(this.current.blocks, this.current.x, y, 0, 1)) y++;
         return y;
       },
 
