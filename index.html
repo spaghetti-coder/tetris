@@ -54,6 +54,11 @@
       order: 3;
       display: none;
     }
+    #hard-drop-btn {
+      display: none;
+      position: absolute;
+      z-index: 5;
+    }
 
     /* --- Shared utilities --- */
     .icon-btn, .settings-item, .key, .overlay {
@@ -473,6 +478,7 @@
     @media (max-width: 768px) {
       body { align-items: flex-start; padding: 8px; }
       .wrapper {
+        position: relative;
         flex-direction: column;
         align-items: center;
         gap: 8px;
@@ -495,6 +501,11 @@
         grid-template-rows: repeat(2, 60px);
         gap: 6px;
         margin-top: 4px;
+      }
+      #hard-drop-btn {
+        display: flex;
+        width: 60px;
+        height: 60px;
       }
       .controls-mobile .up    { grid-column: 2; grid-row: 1; }
       .controls-mobile .left  { grid-column: 1; grid-row: 2; }
@@ -529,6 +540,10 @@
         grid-template-columns: repeat(3, 42px);
         grid-template-rows: repeat(2, 42px);
         gap: 4px;
+      }
+      #hard-drop-btn {
+        width: 42px;
+        height: 42px;
       }
       .panel { padding: 4px 8px; min-width: 90px; }
       .panel h3 { font-size: 10px; }
@@ -627,6 +642,7 @@
       <button class="key down" data-action="soft" type="button"><i class="fa-solid fa-down-long" aria-hidden="true"></i></button>
       <button class="key right" data-action="right" type="button"><i class="fa-solid fa-right-long" aria-hidden="true"></i></button>
     </div>
+    <button id="hard-drop-btn" class="key" data-action="hard" type="button" data-i18n="hardDrop" data-i18n-attr="aria-label" aria-label="Hard Drop"><i class="fa-solid fa-angles-down" aria-hidden="true"></i></button>
   </div>
 
   <script>
@@ -901,6 +917,26 @@
     const GHOST_STORAGE_KEY = 'tetris.ghost.enabled';
     const SEVENBAG_STORAGE_KEY = 'tetris.sevenbag.enabled';
 
+    function positionHardDropBtn() {
+      const btn = document.getElementById('hard-drop-btn');
+      if (!btn) return;
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile) return;
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const canvas = document.getElementById('board');
+      const wrapper = document.querySelector('.wrapper');
+      const canvasRect = canvas.getBoundingClientRect();
+      const wrapperRect = wrapper.getBoundingClientRect();
+      btn.style.bottom = (wrapperRect.bottom - canvasRect.bottom) + 'px';
+      if (isLandscape) {
+        btn.style.left = '0px';
+        btn.style.right = 'auto';
+      } else {
+        btn.style.right = '0px';
+        btn.style.left = 'auto';
+      }
+    }
+
     function resize() {
       const ratio = window.devicePixelRatio;
       const isMobile = window.innerWidth <= 768;
@@ -922,6 +958,7 @@
       view.NEXT_W = isMobile ? 50 : 120;
       view.NEXT_H = isMobile ? 40 : 83;
       view.resizeNextCanvas(view.NEXT_W, view.NEXT_H, ratio);
+      positionHardDropBtn();
     }
 
     // --- Game ---
