@@ -979,7 +979,6 @@
       dropCounter: 0, dropInterval: 1000,
       softDropActive: false, suppressSoftDrop: false,
       lockTimer: null, dasTimer: null, arrTimer: null, dasDir: 0,
-      ghostYVal: 0,
       bag: [],
       isRunning()  { return !this.paused && !this.gameOver; },
       isPlayable() { return this.isRunning() && this.current; },
@@ -1131,10 +1130,11 @@
         this.gameOver = true;
       },
 
-      ghostY() {
-        this.ghostYVal = this.current ? this.current.y : 0;
-        if (!this.current) return;
-        while (!this.collides(this.current.blocks, 0, this.ghostYVal - this.current.y + 1)) this.ghostYVal++;
+      computeGhostY() {
+        if (!this.current) return 0;
+        let y = this.current.y;
+        while (!this.collides(this.current.blocks, 0, y - this.current.y + 1)) y++;
+        return y;
       },
 
       startDAS(dir) {
@@ -1415,9 +1415,9 @@
           this.renderBlocks(ctx, Game.current.blocks, Game.current.x, Game.current.y, Game.current.color, BLOCK);
 
         if (Settings.ghostEnabled && Game.current) {
-          Game.ghostY();
+          const ghostY = Game.computeGhostY();
           ctx.globalAlpha = 0.1;
-          this.renderBlocks(ctx, Game.current.blocks, Game.current.x, Game.ghostYVal, Game.current.color, BLOCK);
+          this.renderBlocks(ctx, Game.current.blocks, Game.current.x, ghostY, Game.current.color, BLOCK);
           ctx.globalAlpha = 1;
 
           ctx.save();
@@ -1428,7 +1428,7 @@
             for (let x = 0; x < Game.current.blocks[y].length; x++) {
               if (!Game.current.blocks[y][x]) continue;
               const px = (Game.current.x + x) * BLOCK;
-              const py = (Game.ghostYVal + y) * BLOCK;
+              const py = (ghostY + y) * BLOCK;
               const noTop   = y === 0 || !Game.current.blocks[y - 1][x];
               const noBot   = y === Game.current.blocks.length - 1 || !Game.current.blocks[y + 1][x];
               const noLeft  = x === 0 || !Game.current.blocks[y][x - 1];
