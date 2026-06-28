@@ -884,6 +884,8 @@
     // --- Constants ---
 
     const COLS = 10, ROWS = 20;
+    const LINE_SCORES = [0, 100, 300, 500, 800];
+    const KICK_OFFSETS = [0, -1, 1, -2, 2];
     const COLORS = [
       null,
       '#00f0f0', '#0000f0', '#f0a000', '#f0f000', '#00f000', '#f00000', '#a000f0'
@@ -1017,8 +1019,7 @@
 
       rotatePiece() {
         const rotated = this.rotate(this.current.blocks);
-        const kicks = [0, -1, 1, -2, 2];
-        for (const k of kicks) {
+        for (const k of KICK_OFFSETS) {
           if (this.collides(rotated, this.current.x, this.current.y, k, 0)) continue;
           this.current.blocks = rotated;
           this.current.x += k;
@@ -1073,8 +1074,7 @@
         if (cleared > 0) {
           Particles.burst(clearedRowData, cleared);
           if (cleared === 4) Shake.trigger();
-          const pts = [0, 100, 300, 500, 800];
-          this.score += pts[cleared] * this.level;
+          this.score += LINE_SCORES[cleared] * this.level;
           this.lines += cleared;
           this.level = Math.floor(this.lines / 10) + 1;
           this.dropInterval = Math.max(50, 1000 - (this.level - 1) * 80);
