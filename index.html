@@ -846,39 +846,39 @@
 
       t(key) {
         return this.messages[this.current]?.[key] ?? key;
+      },
+
+      detectLanguage() {
+        try {
+          const saved = localStorage.getItem(LANG_STORAGE_KEY);
+          if (saved && this.langs.includes(saved)) return saved;
+        } catch (_) {}
+        const detected = (navigator.language || '').slice(0, 2);
+        if (this.langs.includes(detected)) return detected;
+        return this.default;
+      },
+
+      setLanguage(lang) {
+        if (!this.langs.includes(lang)) return;
+        this.current = lang;
+        document.documentElement.lang = lang;
+        try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (_) {}
+      },
+
+      applyI18n() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.dataset.i18n;
+          const attr = el.dataset.i18nAttr;
+          const text = this.t(key);
+          if (attr) el.setAttribute(attr, text);
+          else el.textContent = text;
+        });
+        document.title = this.t('pageTitle');
       }
     };
 
-    function detectLanguage() {
-      try {
-        const saved = localStorage.getItem(LANG_STORAGE_KEY);
-        if (saved && I18N.langs.includes(saved)) return saved;
-      } catch (_) {}
-      const detected = (navigator.language || '').slice(0, 2);
-      if (I18N.langs.includes(detected)) return detected;
-      return I18N.default;
-    }
-
-    function setLanguage(lang) {
-      if (!I18N.langs.includes(lang)) return;
-      I18N.current = lang;
-      document.documentElement.lang = lang;
-      try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch (_) {}
-    }
-
-    function applyI18n() {
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.dataset.i18n;
-        const attr = el.dataset.i18nAttr;
-        const text = I18N.t(key);
-        if (attr) el.setAttribute(attr, text);
-        else el.textContent = text;
-      });
-      document.title = I18N.t('pageTitle');
-    }
-
-    setLanguage(detectLanguage());
-    applyI18n();
+    I18N.setLanguage(I18N.detectLanguage());
+    I18N.applyI18n();
     document.documentElement.classList.remove('i18n-loading');
 
     // --- Constants ---
@@ -2015,8 +2015,8 @@
               return;
             }
             RestartConfirm.cancel();
-            setLanguage(lang);
-            applyI18n();
+            I18N.setLanguage(lang);
+            I18N.applyI18n();
             view.setActiveLangOption(lang);
             view.updateLangToggleLabel();
             view.closeLangSubmenu();
