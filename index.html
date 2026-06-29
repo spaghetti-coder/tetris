@@ -978,12 +978,12 @@
         return r;
       },
 
-      collides(b, baseX, baseY, offsetX, offsetY) {
-        for (let y = 0; y < b.length; y++)
-          for (let x = 0; x < b[y].length; x++)
-            if (b[y][x]) {
-              const nx = baseX + x + offsetX;
-              const ny = baseY + y + offsetY;
+      collidesAt(b, x, y) {
+        for (let by = 0; by < b.length; by++)
+          for (let bx = 0; bx < b[by].length; bx++)
+            if (b[by][bx]) {
+              const nx = x + bx;
+              const ny = y + by;
               if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
               if (ny >= 0 && this.grid[ny][nx]) return true;
             }
@@ -992,7 +992,7 @@
 
       drop() {
         this.tryLock();
-        if (!this.collides(this.current.blocks, this.current.x, this.current.y, 0, 1)) {
+        if (!this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
           this.current.y++;
           this.score += 1;
           this.resetLock();
@@ -1001,7 +1001,7 @@
       },
 
       hardDrop() {
-        while (!this.collides(this.current.blocks, this.current.x, this.current.y, 0, 1)) {
+        while (!this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
           this.current.y++;
           this.score += 2;
         }
@@ -1011,7 +1011,7 @@
       },
 
       move(dir) {
-        if (this.collides(this.current.blocks, this.current.x, this.current.y, dir, 0)) return;
+        if (this.collidesAt(this.current.blocks, this.current.x + dir, this.current.y)) return;
         this.current.x += dir;
         this.resetLock();
         this.tryLock();
@@ -1020,7 +1020,7 @@
       rotatePiece() {
         const rotated = this.rotate(this.current.blocks);
         for (const k of KICK_OFFSETS) {
-          if (this.collides(rotated, this.current.x, this.current.y, k, 0)) continue;
+          if (this.collidesAt(rotated, this.current.x + k, this.current.y)) continue;
           this.current.blocks = rotated;
           this.current.x += k;
           this.resetLock();
@@ -1031,7 +1031,7 @@
 
       tryLock() {
         if (this.lockTimer || !this.current) return;
-        if (this.collides(this.current.blocks, this.current.x, this.current.y, 0, 1)) {
+        if (this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
           this.lockTimer = setTimeout(() => {
             this.lockTimer = null;
             if (this.isPlayable()) this.lock();
@@ -1056,7 +1056,7 @@
         this.current = this.next;
         this.next = this.randomPiece();
         if (this.softDropActive) this.suppressSoftDrop = true;
-        if (this.collides(this.current.blocks, this.current.x, this.current.y, 0, 0)) this.endGame();
+        if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) this.endGame();
       },
 
       clearLines() {
@@ -1089,7 +1089,7 @@
       computeGhostY() {
         if (!this.current) return 0;
         let y = this.current.y;
-        while (!this.collides(this.current.blocks, this.current.x, y, 0, 1)) y++;
+        while (!this.collidesAt(this.current.blocks, this.current.x, y + 1)) y++;
         return y;
       },
 
@@ -1810,15 +1810,16 @@
 
       _bindKeyboard() {
         document.addEventListener('keydown', e => {
+          const key = e.key.toLowerCase();
           const menuOpen = view.isSettingsMenuOpen();
 
           if (Game.gameOver) {
-            if (!menuOpen && (e.key === 'r' || e.key === 'R' || e.key === 'Enter')) Lifecycle.resetGame();
+            if (!menuOpen && (key === 'r' || key === 'enter')) Lifecycle.resetGame();
             return;
           }
 
           if (menuOpen) {
-            if (e.key === 'Escape') {
+            if (key === 'escape') {
               if (view.isRankingSubmenuOpen()) view.closeRankingSubmenu();
               else if (view.isLangSubmenuOpen()) view.closeLangSubmenu();
               else view.closeSettingsMenu();
@@ -1827,7 +1828,7 @@
             return;
           }
 
-          if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+          if (key === 'p' || key === 'escape') {
             Lifecycle.togglePause();
             e.preventDefault();
             return;
@@ -1835,22 +1836,21 @@
 
           if (Game.paused) return;
 
-          switch (e.key) {
-            case 'ArrowLeft':  Game.startDAS(-1); e.preventDefault(); break;
-            case 'ArrowRight': Game.startDAS(1);  e.preventDefault(); break;
-            case 'ArrowDown':
+          switch (key) {
+            case 'arrowleft':  Game.startDAS(-1); e.preventDefault(); break;
+            case 'arrowright': Game.startDAS(1);  e.preventDefault(); break;
+            case 'arrowdown':
               Game.softDropActive = true;
               if (!Game.suppressSoftDrop) Game.drop();
               e.preventDefault();
               break;
-            case 'ArrowUp':
+            case 'arrowup':
             case 'x':
-            case 'X':
               Game.rotatePiece();
               e.preventDefault();
               break;
             case ' ':
-            case 'Enter':
+            case 'enter':
               Game.hardDrop();
               e.preventDefault();
               break;
