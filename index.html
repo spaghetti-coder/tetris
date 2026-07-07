@@ -590,6 +590,11 @@
           <span class="indicator" id="sevenbag-indicator"></span>
           <span class="label" data-i18n="sevenBag">7-bag</span>
         </button>
+        <button id="blackwhite-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="blackWhite" data-i18n-attr="aria-label" aria-label="Black & white">
+          <i class="fa-solid fa-circle-half-stroke icon" aria-hidden="true"></i>
+          <span class="indicator" id="blackwhite-indicator"></span>
+          <span class="label" data-i18n="blackWhite">Black & white</span>
+        </button>
         <div class="submenu-wrapper">
           <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
             <i class="fa-solid fa-language icon" aria-hidden="true"></i>
@@ -697,6 +702,7 @@
           settings: 'Settings',
           ghost: 'Ghost object',
           sevenBag: '7-bag',
+          blackWhite: 'Black & white',
           langLabel: 'Language',
           ranking: 'Ranking',
           bestScore: 'Best Score:',
@@ -730,6 +736,7 @@
           settings: 'На стройку',
           ghost: 'Подсказка падения',
           sevenBag: '7-мешок',
+          blackWhite: 'Чёрно-белые',
           langLabel: 'Язык',
           ranking: 'Рекорды',
           bestScore: 'Рекорд:',
@@ -763,6 +770,7 @@
           settings: 'Настройки',
           ghost: 'Подсказка за падане',
           sevenBag: '7-чувал',
+          blackWhite: 'Черно-бяло',
           langLabel: 'Език',
           ranking: 'Рекорди',
           bestScore: 'Рекорд:',
@@ -796,6 +804,7 @@
           settings: 'Setări',
           ghost: 'Indicație cădere',
           sevenBag: '7-sac',
+          blackWhite: 'Alb-negru',
           langLabel: 'Limbă',
           ranking: 'Clasament',
           bestScore: 'Cel mai bun scor:',
@@ -829,6 +838,7 @@
           settings: 'Paramètres',
           ghost: 'Ombre de chute',
           sevenBag: '7-sac',
+          blackWhite: 'Noir et blanc',
           langLabel: 'Langue',
           ranking: 'Classement',
           bestScore: 'Meilleur score :',
@@ -907,6 +917,7 @@
 
     const GHOST_STORAGE_KEY = 'tetris.ghost.enabled';
     const SEVENBAG_STORAGE_KEY = 'tetris.sevenbag.enabled';
+    const BLACKWHITE_STORAGE_KEY = 'tetris.blackwhite.enabled';
 
     // --- Game ---
 
@@ -1329,15 +1340,21 @@
     const Render = {
       drawBlock(context, x, y, colorId, size, ox = 0, oy = 0) {
         const px = x * size + ox, py = y * size + oy;
-        context.fillStyle = COLORS[colorId];
+        const mono = Settings.blackWhiteEnabled;
+        const fill = mono ? '#ffffff' : COLORS[colorId];
+        const lightEdge = mono ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.25)';
+        const darkEdge = mono ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.25)';
+        const stroke = mono ? '#000000' : '#222';
+
+        context.fillStyle = fill;
         context.fillRect(px, py, size, size);
-        context.fillStyle = 'rgba(255,255,255,0.25)';
+        context.fillStyle = lightEdge;
         context.fillRect(px, py, size, 2);
         context.fillRect(px, py, 2, size);
-        context.fillStyle = 'rgba(0,0,0,0.25)';
+        context.fillStyle = darkEdge;
         context.fillRect(px + size - 2, py, 2, size);
         context.fillRect(px, py + size - 2, size, 2);
-        context.strokeStyle = '#222';
+        context.strokeStyle = stroke;
         context.lineWidth = 1;
         context.strokeRect(px, py, size, size);
       },
@@ -1419,6 +1436,7 @@
       _pauseBtn: null, _settingsBtn: null, _menu: null,
       _ghostToggle: null, _ghostIndicator: null,
       _sevenBagToggle: null, _sevenBagIndicator: null,
+      _blackWhiteToggle: null, _blackWhiteIndicator: null,
       _langToggle: null, _langSubmenu: null,
       _langOptions: null,
       _overlayPause: null, _overlayOver: null,
@@ -1443,6 +1461,8 @@
         this._ghostIndicator = document.getElementById('ghost-indicator');
         this._sevenBagToggle = document.getElementById('sevenbag-toggle');
         this._sevenBagIndicator = document.getElementById('sevenbag-indicator');
+        this._blackWhiteToggle = document.getElementById('blackwhite-toggle');
+        this._blackWhiteIndicator = document.getElementById('blackwhite-indicator');
         this._langToggle = document.getElementById('lang-toggle');
         this._langSubmenu = document.getElementById('lang-submenu');
         this._langSubmenu.innerHTML = '';
@@ -1637,6 +1657,7 @@
 
       setGhostIndicator(on)    { this._setIndicator(this._ghostIndicator,   this._ghostToggle,   on); },
       setSevenBagIndicator(on) { this._setIndicator(this._sevenBagIndicator, this._sevenBagToggle, on); },
+      setBlackWhiteIndicator(on) { this._setIndicator(this._blackWhiteIndicator, this._blackWhiteToggle, on); },
 
       setBodyState(paused, gameOver) {
         document.body.classList.toggle('paused', paused);
@@ -1701,6 +1722,7 @@
     const Settings = {
       ghostEnabled: true,
       sevenBagEnabled: false,
+      blackWhiteEnabled: false,
 
       _load(key, def) {
         try {
@@ -1718,6 +1740,7 @@
       init() {
         this.ghostEnabled = this._load(GHOST_STORAGE_KEY, true);
         this.sevenBagEnabled = this._load(SEVENBAG_STORAGE_KEY, false);
+        this.blackWhiteEnabled = this._load(BLACKWHITE_STORAGE_KEY, false);
       },
 
       _toggle(field, storageKey) {
@@ -1727,6 +1750,7 @@
 
       toggleGhost()    { this._toggle('ghostEnabled',    GHOST_STORAGE_KEY); },
       toggleSevenBag() { this._toggle('sevenBagEnabled', SEVENBAG_STORAGE_KEY); },
+      toggleBlackWhite() { this._toggle('blackWhiteEnabled', BLACKWHITE_STORAGE_KEY); },
     };
 
     // --- Scores ---
@@ -1989,6 +2013,13 @@
           if (Settings.sevenBagEnabled) Game.fillBag();
         });
 
+        view._blackWhiteToggle.addEventListener('click', () => {
+          view.setLangSubmenuOpen(false);
+          view.closeRankingSubmenu();
+          Settings.toggleBlackWhite();
+          view.setBlackWhiteIndicator(Settings.blackWhiteEnabled);
+        });
+
         view._langToggle.addEventListener('click', () => {
           view.closeRankingSubmenu();
           const open = view.isLangSubmenuOpen();
@@ -2045,6 +2076,7 @@
         Scores.load();
         view.setGhostIndicator(Settings.ghostEnabled);
         view.setSevenBagIndicator(Settings.sevenBagEnabled);
+        view.setBlackWhiteIndicator(Settings.blackWhiteEnabled);
         view.setActiveLangOption(I18N.current);
         view.updateLangToggleLabel();
         view.resize();
