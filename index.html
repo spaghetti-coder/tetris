@@ -601,6 +601,11 @@
           <span class="indicator" id="blackwhite-indicator"></span>
           <span class="label" data-i18n="blackWhite">Black & white</span>
         </button>
+        <button id="grid-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="grid" data-i18n-attr="aria-label" aria-label="Grid">
+          <i class="fa-solid fa-border-all icon" aria-hidden="true"></i>
+          <span class="indicator" id="grid-indicator"></span>
+          <span class="label" data-i18n="grid">Grid</span>
+        </button>
         <div class="submenu-wrapper">
           <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
             <i class="fa-solid fa-language icon" aria-hidden="true"></i>
@@ -709,6 +714,7 @@
           ghost: 'Ghost object',
           sevenBag: '7-bag',
           blackWhite: 'Black & white',
+          grid: 'Grid',
           langLabel: 'Language',
           ranking: 'Ranking',
           bestScore: 'Best Score:',
@@ -743,6 +749,7 @@
           ghost: 'Подсказка падения',
           sevenBag: '7-мешок',
           blackWhite: 'Чёрно-белые',
+          grid: 'Сетка',
           langLabel: 'Язык',
           ranking: 'Рекорды',
           bestScore: 'Рекорд:',
@@ -777,6 +784,7 @@
           ghost: 'Подсказка за падане',
           sevenBag: '7-чувал',
           blackWhite: 'Черно-бяло',
+          grid: 'Мрежа',
           langLabel: 'Език',
           ranking: 'Рекорди',
           bestScore: 'Рекорд:',
@@ -811,6 +819,7 @@
           ghost: 'Indicație cădere',
           sevenBag: '7-sac',
           blackWhite: 'Alb-negru',
+          grid: 'Grilă',
           langLabel: 'Limbă',
           ranking: 'Clasament',
           bestScore: 'Cel mai bun scor:',
@@ -845,6 +854,7 @@
           ghost: 'Ombre de chute',
           sevenBag: '7-sac',
           blackWhite: 'Noir et blanc',
+          grid: 'Grille',
           langLabel: 'Langue',
           ranking: 'Classement',
           bestScore: 'Meilleur score :',
@@ -924,6 +934,7 @@
     const GHOST_STORAGE_KEY = 'tetris.ghost.enabled';
     const SEVENBAG_STORAGE_KEY = 'tetris.sevenbag.enabled';
     const BLACKWHITE_STORAGE_KEY = 'tetris.blackwhite.enabled';
+    const GRID_STORAGE_KEY = 'tetris.grid.enabled';
 
     // --- Game ---
 
@@ -1388,6 +1399,23 @@
         ctx.fillStyle = '#0f0f23';
         ctx.fillRect(-4, -4, VIEW_W + 8, VIEW_H + 8);
 
+        if (Settings.gridEnabled) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let x = 1; x < COLS; x++) {
+            ctx.moveTo(x * BLOCK, 0);
+            ctx.lineTo(x * BLOCK, ROWS * BLOCK);
+          }
+          for (let y = 1; y < ROWS; y++) {
+            ctx.moveTo(0, y * BLOCK);
+            ctx.lineTo(COLS * BLOCK, y * BLOCK);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+
         this.renderBlocks(ctx, Game.grid, 0, 0, (x, y) => Game.grid[y][x], BLOCK);
 
         if (Game.current)
@@ -1443,6 +1471,7 @@
       _ghostToggle: null, _ghostIndicator: null,
       _sevenBagToggle: null, _sevenBagIndicator: null,
       _blackWhiteToggle: null, _blackWhiteIndicator: null,
+      _gridToggle: null, _gridIndicator: null,
       _langToggle: null, _langSubmenu: null,
       _langOptions: null,
       _overlayPause: null, _overlayOver: null,
@@ -1469,6 +1498,8 @@
         this._sevenBagIndicator = document.getElementById('sevenbag-indicator');
         this._blackWhiteToggle = document.getElementById('blackwhite-toggle');
         this._blackWhiteIndicator = document.getElementById('blackwhite-indicator');
+        this._gridToggle = document.getElementById('grid-toggle');
+        this._gridIndicator = document.getElementById('grid-indicator');
         this._langToggle = document.getElementById('lang-toggle');
         this._langSubmenu = document.getElementById('lang-submenu');
         this._langSubmenu.innerHTML = '';
@@ -1664,6 +1695,7 @@
       setGhostIndicator(on)    { this._setIndicator(this._ghostIndicator,   this._ghostToggle,   on); },
       setSevenBagIndicator(on) { this._setIndicator(this._sevenBagIndicator, this._sevenBagToggle, on); },
       setBlackWhiteIndicator(on) { this._setIndicator(this._blackWhiteIndicator, this._blackWhiteToggle, on); },
+      setGridIndicator(on) { this._setIndicator(this._gridIndicator, this._gridToggle, on); },
 
       setBodyState(paused, gameOver) {
         document.body.classList.toggle('paused', paused);
@@ -1729,6 +1761,7 @@
       ghostEnabled: true,
       sevenBagEnabled: false,
       blackWhiteEnabled: false,
+      gridEnabled: false,
 
       _load(key, def) {
         try {
@@ -1747,6 +1780,7 @@
         this.ghostEnabled = this._load(GHOST_STORAGE_KEY, true);
         this.sevenBagEnabled = this._load(SEVENBAG_STORAGE_KEY, false);
         this.blackWhiteEnabled = this._load(BLACKWHITE_STORAGE_KEY, false);
+        this.gridEnabled = this._load(GRID_STORAGE_KEY, false);
       },
 
       _toggle(field, storageKey) {
@@ -1757,6 +1791,7 @@
       toggleGhost()    { this._toggle('ghostEnabled',    GHOST_STORAGE_KEY); },
       toggleSevenBag() { this._toggle('sevenBagEnabled', SEVENBAG_STORAGE_KEY); },
       toggleBlackWhite() { this._toggle('blackWhiteEnabled', BLACKWHITE_STORAGE_KEY); },
+      toggleGrid() { this._toggle('gridEnabled', GRID_STORAGE_KEY); },
     };
 
     // --- Scores ---
@@ -2031,6 +2066,13 @@
           view.setBlackWhiteIndicator(Settings.blackWhiteEnabled);
         });
 
+        view._gridToggle.addEventListener('click', () => {
+          view.setLangSubmenuOpen(false);
+          view.closeRankingSubmenu();
+          Settings.toggleGrid();
+          view.setGridIndicator(Settings.gridEnabled);
+        });
+
         view._langToggle.addEventListener('click', () => {
           view.closeRankingSubmenu();
           const open = view.isLangSubmenuOpen();
@@ -2088,6 +2130,7 @@
         view.setGhostIndicator(Settings.ghostEnabled);
         view.setSevenBagIndicator(Settings.sevenBagEnabled);
         view.setBlackWhiteIndicator(Settings.blackWhiteEnabled);
+        view.setGridIndicator(Settings.gridEnabled);
         view.setActiveLangOption(I18N.current);
         view.updateLangToggleLabel();
         view.resize();
