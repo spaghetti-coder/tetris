@@ -153,6 +153,7 @@
       font-size: 14px;
       line-height: 1.2;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
     }
     .settings-item .label::before {
       content: '';
@@ -1828,6 +1829,11 @@
             view.isLangSubmenuOpen.bind(view),
             view.closeLangSubmenu.bind(view)
           );
+          if (view.isSettingsMenuOpen() &&
+              !view._menu.contains(e.target) &&
+              !view._settingsBtn.contains(e.target)) {
+            view.closeSettingsMenu();
+          }
         });
       },
 
