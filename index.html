@@ -336,7 +336,29 @@
     }
     #lang-submenu {
       max-height: 240px;
-      overflow-y: auto;
+      overflow-y: scroll;
+    }
+    #lang-submenu::-webkit-scrollbar,
+    .ranking-list::-webkit-scrollbar,
+    #ranking-submenu::-webkit-scrollbar {
+      width: 4px;
+    }
+    #lang-submenu::-webkit-scrollbar-track,
+    .ranking-list::-webkit-scrollbar-track,
+    #ranking-submenu::-webkit-scrollbar-track {
+      background: var(--color-bg);
+      border-radius: 4px;
+    }
+    #lang-submenu::-webkit-scrollbar-thumb,
+    .ranking-list::-webkit-scrollbar-thumb,
+    #ranking-submenu::-webkit-scrollbar-thumb {
+      background: var(--color-border-light);
+      border-radius: 4px;
+    }
+    #lang-submenu::-webkit-scrollbar-thumb:hover,
+    .ranking-list::-webkit-scrollbar-thumb:hover,
+    #ranking-submenu::-webkit-scrollbar-thumb:hover {
+      background: var(--color-muted);
     }
     #lang-submenu.open { display: block; }
     .lang-option {
@@ -365,11 +387,11 @@
 
     #ranking-submenu {
       max-height: 140px;
-      overflow: hidden;
+      overflow-y: scroll;
     }
     #ranking-submenu.open { display: flex; flex-direction: column; }
     .ranking-list {
-      overflow-y: auto;
+      overflow-y: scroll;
       flex: 1 1 auto;
     }
     .ranking-row {
