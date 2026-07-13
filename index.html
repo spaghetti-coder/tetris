@@ -78,6 +78,9 @@
       border-radius: 6px;
       padding: 0;
     }
+    #settings-menu {
+      background: var(--color-panel);
+    }
 
     /* --- Components --- */
     .side {
@@ -137,7 +140,8 @@
       cursor: pointer;
     }
     .settings-item:hover,
-    .settings-item:focus-visible { background: var(--color-accent-glow); }
+    .settings-item:focus-visible,
+    .settings-item:active { background: transparent; }
     .settings-item .icon { font-size: 18px; }
     .settings-item .label {
       position: absolute;
@@ -146,7 +150,7 @@
       transform: translateY(-50%);
       white-space: nowrap;
       color: var(--color-muted);
-      background: var(--color-glass);
+      background: var(--color-panel);
       border: 1px solid var(--color-border-light);
       border-radius: 4px;
       padding: 2px 6px;
@@ -177,7 +181,7 @@
       height: 0;
       border-top: 4px solid transparent;
       border-bottom: 4px solid transparent;
-      border-right: 5px solid var(--color-glass);
+      border-right: 5px solid var(--color-panel);
     }
     .settings-item .indicator {
       position: absolute;
@@ -333,7 +337,7 @@
       display: none;
       width: auto;
       min-width: 0;
-      background: var(--color-glass);
+      background: var(--color-panel);
       border: 1px solid var(--color-border-light);
       border-radius: 6px;
       padding: 6px 0;
@@ -351,7 +355,7 @@
     #lang-submenu::-webkit-scrollbar-track,
     .ranking-list::-webkit-scrollbar-track,
     #ranking-submenu::-webkit-scrollbar-track {
-      background: var(--color-bg);
+      background: transparent;
       border-radius: 4px;
     }
     #lang-submenu::-webkit-scrollbar-thumb,
