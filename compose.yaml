@@ -1,10 +1,12 @@
 ---
 x-gameon-service:
+  # ~~~ Prod env ~~~
   game: &gameon
-    image: ghcr.io/spaghetti-coder/tetris:master
+    image: ghcr.io/spaghetti-coder/tetris:latest
     ports:
       - "8080:8080"
     restart: unless-stopped
+  # ~~~ Dev env ~~~
   dev: &gameon-dev
     image: caddy:latest
     ports:

@@ -318,6 +318,11 @@
     #settings-menu.open::before {
       border-bottom-color: var(--color-accent);
     }
+    .settings-separator {
+      height: 2px;
+      /* margin: 0px 0px; */
+      background: linear-gradient(90deg, transparent, var(--color-border-light), transparent);
+    }
 
     .submenu-wrapper { position: relative; }
     .submenu {
@@ -621,6 +626,7 @@
           <span class="indicator" id="blackwhite-indicator"></span>
           <span class="label" data-i18n="blackWhite">Black & white</span>
         </button>
+        <div class="settings-separator"></div>
         <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="true" data-i18n="ghost" data-i18n-attr="aria-label" aria-label="Ghost object">
           <i class="fa-solid fa-ghost icon" aria-hidden="true"></i>
           <span class="indicator on" id="ghost-indicator"></span>
