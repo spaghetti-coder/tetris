@@ -1,9 +1,9 @@
 ---
 services:
-  web:
-    image: caddy:latest
+  tetris:
+    image: ghcr.io/spaghetti-coder/tetris:master
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - .:/app
