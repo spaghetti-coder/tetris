@@ -1,10 +1,19 @@
 ---
-services:
-  tetris:
+x-gameon-service:
+  game: &gameon
     image: ghcr.io/spaghetti-coder/tetris:master
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+  dev: &gameon-dev
+    image: caddy:latest
     ports:
       - "8080:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - .:/app
     restart: unless-stopped
+
+services:
+  gameon-dev: *gameon-dev
+  # gameon: *gameon

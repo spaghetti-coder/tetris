@@ -608,6 +608,19 @@
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
       <div id="settings-menu" role="menu" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings">
+        <div class="submenu-wrapper">
+          <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
+            <i class="fa-solid fa-language icon" aria-hidden="true"></i>
+            <span class="label">Language</span>
+          </button>
+          <div id="lang-submenu" class="submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
+          </div>
+        </div>
+        <button id="blackwhite-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="blackWhite" data-i18n-attr="aria-label" aria-label="Black & white">
+          <i class="fa-solid fa-circle-half-stroke icon" aria-hidden="true"></i>
+          <span class="indicator" id="blackwhite-indicator"></span>
+          <span class="label" data-i18n="blackWhite">Black & white</span>
+        </button>
         <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="true" data-i18n="ghost" data-i18n-attr="aria-label" aria-label="Ghost object">
           <i class="fa-solid fa-ghost icon" aria-hidden="true"></i>
           <span class="indicator on" id="ghost-indicator"></span>
@@ -618,24 +631,11 @@
           <span class="indicator" id="sevenbag-indicator"></span>
           <span class="label" data-i18n="sevenBag">7-bag</span>
         </button>
-        <button id="blackwhite-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="blackWhite" data-i18n-attr="aria-label" aria-label="Black & white">
-          <i class="fa-solid fa-circle-half-stroke icon" aria-hidden="true"></i>
-          <span class="indicator" id="blackwhite-indicator"></span>
-          <span class="label" data-i18n="blackWhite">Black & white</span>
-        </button>
         <button id="grid-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="grid" data-i18n-attr="aria-label" aria-label="Grid">
           <i class="fa-solid fa-border-all icon" aria-hidden="true"></i>
           <span class="indicator" id="grid-indicator"></span>
           <span class="label" data-i18n="grid">Grid</span>
         </button>
-        <div class="submenu-wrapper">
-          <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
-            <i class="fa-solid fa-language icon" aria-hidden="true"></i>
-            <span class="label">Language</span>
-          </button>
-          <div id="lang-submenu" class="submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
-          </div>
-        </div>
         <div class="submenu-wrapper">
           <button id="ranking-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
             <i class="fa-solid fa-trophy icon" aria-hidden="true"></i>
