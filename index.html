@@ -625,23 +625,23 @@
           <div id="lang-submenu" class="submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
           </div>
         </div>
-        <button id="blackwhite-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="blackWhite" data-i18n-attr="aria-label" aria-label="Black & white">
+        <button id="blackwhite-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="blackWhite" data-i18n-attr="aria-label" aria-label="Black & white">
           <i class="fa-solid fa-circle-half-stroke icon" aria-hidden="true"></i>
           <span class="indicator" id="blackwhite-indicator"></span>
           <span class="label" data-i18n="blackWhite">Black & white</span>
         </button>
         <div class="settings-separator"></div>
-        <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="true" data-i18n="ghost" data-i18n-attr="aria-label" aria-label="Ghost object">
+        <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="ghost" data-i18n-attr="aria-label" aria-label="Ghost object">
           <i class="fa-solid fa-ghost icon" aria-hidden="true"></i>
-          <span class="indicator on" id="ghost-indicator"></span>
+          <span class="indicator" id="ghost-indicator"></span>
           <span class="label" data-i18n="ghost">Ghost object</span>
         </button>
-        <button id="sevenbag-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="sevenBag" data-i18n-attr="aria-label" aria-label="7-bag">
+        <button id="sevenbag-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="sevenBag" data-i18n-attr="aria-label" aria-label="7-bag">
           <i class="fa-solid fa-sack-dollar icon" aria-hidden="true"></i>
           <span class="indicator" id="sevenbag-indicator"></span>
           <span class="label" data-i18n="sevenBag">7-bag</span>
         </button>
-        <button id="grid-toggle" class="settings-item" type="button" role="menuitemcheckbox" aria-checked="false" data-i18n="grid" data-i18n-attr="aria-label" aria-label="Grid">
+        <button id="grid-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="grid" data-i18n-attr="aria-label" aria-label="Grid">
           <i class="fa-solid fa-border-all icon" aria-hidden="true"></i>
           <span class="indicator" id="grid-indicator"></span>
           <span class="label" data-i18n="grid">Grid</span>
@@ -1791,9 +1791,9 @@
 
     const Settings = {
       ghostEnabled: true,
-      sevenBagEnabled: false,
+      sevenBagEnabled: true,
       blackWhiteEnabled: false,
-      gridEnabled: false,
+      gridEnabled: true,
 
       _load(key, def) {
         try {
@@ -1809,10 +1809,10 @@
       },
 
       init() {
-        this.ghostEnabled = this._load(GHOST_STORAGE_KEY, true);
-        this.sevenBagEnabled = this._load(SEVENBAG_STORAGE_KEY, false);
-        this.blackWhiteEnabled = this._load(BLACKWHITE_STORAGE_KEY, false);
-        this.gridEnabled = this._load(GRID_STORAGE_KEY, false);
+        this.ghostEnabled = this._load(GHOST_STORAGE_KEY, this.ghostEnabled);
+        this.sevenBagEnabled = this._load(SEVENBAG_STORAGE_KEY, this.sevenBagEnabled);
+        this.blackWhiteEnabled = this._load(BLACKWHITE_STORAGE_KEY, this.blackWhiteEnabled);
+        this.gridEnabled = this._load(GRID_STORAGE_KEY, this.gridEnabled);
       },
 
       _toggle(field, storageKey) {
