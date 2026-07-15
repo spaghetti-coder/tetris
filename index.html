@@ -20,6 +20,7 @@
       --color-border: #333;
       --color-border-mid: #444;
       --color-border-light: #555;
+      --color-border-icon: #777;
       --color-glass: rgba(22, 33, 62, 0.88);
       --color-glass-active: rgba(40, 55, 95, 0.95);
       --color-accent-glow: rgba(233, 69, 96, 0.12);
@@ -74,7 +75,7 @@
     }
     .icon-btn, #settings-menu {
       background: var(--color-glass);
-      border: 1px solid #777;
+      border: 1px solid var(--color-border-icon);
       border-radius: 6px;
       padding: 0;
     }
@@ -324,7 +325,6 @@
     }
     .settings-separator {
       height: 2px;
-      /* margin: 0px 0px; */
       background: linear-gradient(90deg, transparent, var(--color-border-light), transparent);
     }
 
@@ -924,14 +924,14 @@
       },
 
       applyI18n() {
+        const t = this.t.bind(this);
         document.querySelectorAll('[data-i18n]').forEach(el => {
           const key = el.dataset.i18n;
           const attr = el.dataset.i18nAttr;
-          const text = this.t(key);
-          if (attr) el.setAttribute(attr, text);
-          else el.textContent = text;
+          if (attr) el.setAttribute(attr, t(key));
+          else el.textContent = t(key);
         });
-        document.title = this.t('pageTitle');
+        document.title = t('pageTitle');
       }
     };
 
@@ -971,19 +971,21 @@
     // --- Game ---
 
     const randInt = (() => {
-      const crypto_ = globalThis.crypto;
-      if (crypto_ && typeof crypto_.getRandomValues === 'function') {
-        const a = new Uint32Array(1);
+      const cryptoSrc = globalThis.crypto;
+      if (cryptoSrc && typeof cryptoSrc.getRandomValues === 'function') {
+        const buf = new Uint32Array(1);
         return max => {
           const limit = Math.floor(0x100000000 / max) * max;
           let v;
-          do { crypto_.getRandomValues(a); v = a[0]; }
+          do { cryptoSrc.getRandomValues(buf); v = buf[0]; }
           while (v >= limit);
           return v % max;
         };
       }
       return max => Math.floor(Math.random() * max);
     })();
+
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
     function vibrate(ms) {
       if (navigator.vibrate) navigator.vibrate(ms);
@@ -1115,6 +1117,7 @@
         this.clearLines();
         this.current = this.next;
         this.next = this.randomPiece();
+        // Suppress initial drop tick when soft-drop was held across lock
         if (this.softDropActive) this.suppressSoftDrop = true;
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) this.endGame();
       },
@@ -1511,6 +1514,8 @@
       _actionBtns: null,
       _gameArea: null,
       _hardDropBtn: null,
+      _rankingSubmenu: null,
+      _rankingToggle: null,
       _wrapper: null,
       BLOCK: 30, VIEW_W: 0, VIEW_H: 0, NEXT_W: 0, NEXT_H: 0,
 
@@ -1579,6 +1584,7 @@
       get langOptions() { return this._langOptions; },
 
       setStat(k, v)    { this._stats[k].textContent = v; },
+      setStats()       { this.setStat('score', Game.score); this.setStat('level', Game.level); this.setStat('lines', Game.lines); },
 
       applyShake(x, y) {
         this._gameArea.style.transform = (x || y) ? `translate(${x}px, ${y}px)` : '';
@@ -1774,7 +1780,7 @@
           maxW = window.innerWidth - 16;
           availableH = window.innerHeight - 260;
         }
-        this.BLOCK = Math.max(15, Math.floor(Math.min(maxW / COLS, availableH / ROWS)));
+        this.BLOCK = clamp(Math.floor(Math.min(maxW / COLS, availableH / ROWS)), 15, 99);
         this.VIEW_W = this.BLOCK * COLS;
         this.VIEW_H = this.BLOCK * ROWS;
 
@@ -1846,7 +1852,7 @@
         } catch (_) { this._scores = []; }
       },
 
-      all()       { return this._scores; },
+      all()       { return [...this._scores]; },
       best()      { return this._scores[0] ?? null; },
       contains(s) { return this._scores.includes(s); },
 
@@ -2178,7 +2184,7 @@
       },
 
       _loop(t) {
-        const dt = this._lastTime ? Math.min(100, t - this._lastTime) : 0;
+        const dt = this._lastTime ? clamp(t - this._lastTime, 0, 100) : 0;
         this._lastTime = t;
         Game.tick(dt);
         Particles.update(dt);
@@ -2196,9 +2202,7 @@
           view.setPauseBtnVisible(false);
         }
         view.setBodyState(Game.paused, Game.gameOver);
-        view.setStat('score', Game.score);
-        view.setStat('level', Game.level);
-        view.setStat('lines', Game.lines);
+        view.setStats();
 
         Render.draw();
         this._rafId = requestAnimationFrame(t2 => this._loop(t2));
@@ -2230,8 +2234,8 @@
           state = 'noBest';
         } else {
           Scores.record(score);
-          if (prevBest === null && score <= 0) state = 'noBest';
-          else if (prevBest === null || score > prevBest) state = 'newBest';
+          if (prevBest === null) state = score > 0 ? 'newBest' : 'noBest';
+          else if (score > prevBest) state = 'newBest';
           else if (score === prevBest) state = 'tiedBest';
           else state = 'notBest';
         }
@@ -2249,9 +2253,7 @@
         view.setPauseBtnVisible(true);
         view.setBodyState(Game.paused, Game.gameOver);
         view.setPauseAriaLabel(Game.paused);
-        view.setStat('score', Game.score);
-        view.setStat('level', Game.level);
-        view.setStat('lines', Game.lines);
+        view.setStats();
       },
     };
 
