@@ -1100,6 +1100,8 @@
     }
 
     const Game = {
+      // -- State --
+
       grid: null,
       score: 0, level: 1, lines: 0,
       paused: false, gameOver: false,
@@ -1108,13 +1110,20 @@
       softDropActive: false, suppressSoftDrop: false,
       lockTimer: null, dasTimer: null, arrTimer: null, dasDir: 0,
       bag: [],
+
+      // -- Status --
+
       isRunning()  { return !this.paused && !this.gameOver; },
       isPlayable() { return this.isRunning() && this.current; },
+
+      // -- Soft drop --
 
       clearSoftDrop() {
         this.softDropActive = false;
         this.suppressSoftDrop = false;
       },
+
+      // -- Piece generation --
 
       fillBag() {
         this.bag = [...PIECE_NAMES];
@@ -1139,6 +1148,8 @@
         };
       },
 
+      // -- Rotation --
+
       rotate(blocks) {
         const N = blocks.length;
         const r = Array.from({ length: N }, () => Array(N).fill(0));
@@ -1147,6 +1158,8 @@
             r[x][N - 1 - y] = blocks[y][x];
         return r;
       },
+
+      // -- Collision --
 
       collidesAt(b, x, y) {
         for (let by = 0; by < b.length; by++)
@@ -1159,6 +1172,8 @@
             }
         return false;
       },
+
+      // -- Movement --
 
       drop() {
         this.tryLock();
@@ -1199,6 +1214,8 @@
         }
       },
 
+      // -- Locking --
+
       tryLock() {
         if (this.lockTimer || !this.current) return;
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
@@ -1230,6 +1247,8 @@
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) this.endGame();
       },
 
+      // -- Scoring --
+
       clearLines() {
         let cleared = 0;
         const clearedRowData = [];
@@ -1253,6 +1272,8 @@
         }
       },
 
+      // -- Game flow --
+
       endGame() {
         this.gameOver = true;
       },
@@ -1263,6 +1284,8 @@
         while (!this.collidesAt(this.current.blocks, this.current.x, y + 1)) y++;
         return y;
       },
+
+      // -- DAS / ARR --
 
       startDAS(dir) {
         if (this.dasDir === dir) return;
@@ -1283,6 +1306,8 @@
         this.arrTimer = null;
         this.dasDir = 0;
       },
+
+      // -- Lifecycle --
 
       resetGame() {
         this.stopDAS();
@@ -1498,6 +1523,8 @@
     // --- Rendering ---
 
     const Render = {
+      // -- Primitives --
+
       drawBlock(context, x, y, colorId, size, ox = 0, oy = 0) {
         const px = x * size + ox, py = y * size + oy;
         const mono = Settings.blackWhiteEnabled;
@@ -1530,68 +1557,88 @@
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
       },
 
+      // -- Pipeline --
+
       draw() {
         const ctx = view.ctx;
         const nextCtx = view.nextCtx;
         const BLOCK = view.BLOCK;
+        this.clearCanvas(ctx);
+        if (Settings.gridEnabled) this.drawGrid(ctx, BLOCK);
+        this.drawBoard(ctx, BLOCK);
+        this.drawPiece(ctx, BLOCK);
+        if (Settings.ghostEnabled && Game.current) this.drawGhost(ctx, BLOCK);
+        this.drawNext(nextCtx);
+        Particles.draw(ctx, BLOCK);
+      },
+
+      clearCanvas(ctx) {
         const VIEW_W = view.VIEW_W;
         const VIEW_H = view.VIEW_H;
-        const NEXT_W = view.NEXT_W;
-        const NEXT_H = view.NEXT_H;
-
         ctx.fillStyle = '#0f0f23';
         ctx.fillRect(-4, -4, VIEW_W + 8, VIEW_H + 8);
+      },
 
-        if (Settings.gridEnabled) {
-          ctx.save();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          for (let x = 1; x < COLS; x++) {
-            ctx.moveTo(x * BLOCK, 0);
-            ctx.lineTo(x * BLOCK, ROWS * BLOCK);
-          }
-          for (let y = 1; y < ROWS; y++) {
-            ctx.moveTo(0, y * BLOCK);
-            ctx.lineTo(COLS * BLOCK, y * BLOCK);
-          }
-          ctx.stroke();
-          ctx.restore();
+      drawGrid(ctx, BLOCK) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 1; x < COLS; x++) {
+          ctx.moveTo(x * BLOCK, 0);
+          ctx.lineTo(x * BLOCK, ROWS * BLOCK);
         }
+        for (let y = 1; y < ROWS; y++) {
+          ctx.moveTo(0, y * BLOCK);
+          ctx.lineTo(COLS * BLOCK, y * BLOCK);
+        }
+        ctx.stroke();
+        ctx.restore();
+      },
 
+      drawBoard(ctx, BLOCK) {
         this.renderBlocks(ctx, Game.grid, 0, 0, (x, y) => Game.grid[y][x], BLOCK);
+      },
 
-        if (Game.current)
-          this.renderBlocks(ctx, Game.current.blocks, Game.current.x, Game.current.y, Game.current.color, BLOCK);
+      drawPiece(ctx, BLOCK) {
+        if (!Game.current) return;
+        this.renderBlocks(ctx, Game.current.blocks, Game.current.x, Game.current.y, Game.current.color, BLOCK);
+      },
 
-        if (Settings.ghostEnabled && Game.current) {
-          const ghostY = Game.computeGhostY();
-          ctx.globalAlpha = 0.1;
-          this.renderBlocks(ctx, Game.current.blocks, Game.current.x, ghostY, Game.current.color, BLOCK);
-          ctx.globalAlpha = 1;
+      drawGhost(ctx, BLOCK) {
+        const ghostY = Game.computeGhostY();
+        ctx.globalAlpha = 0.1;
+        this.renderBlocks(ctx, Game.current.blocks, Game.current.x, ghostY, Game.current.color, BLOCK);
+        ctx.globalAlpha = 1;
+        this.drawGhostOutline(ctx, ghostY, BLOCK);
+      },
 
-          ctx.save();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
-          ctx.lineWidth = Math.max(1.2, BLOCK / 16);
-          ctx.setLineDash([BLOCK * 0.2, BLOCK * 0.15]);
-          for (let y = 0; y < Game.current.blocks.length; y++) {
-            for (let x = 0; x < Game.current.blocks[y].length; x++) {
-              if (!Game.current.blocks[y][x]) continue;
-              const px = (Game.current.x + x) * BLOCK;
-              const py = (ghostY + y) * BLOCK;
-              const noTop   = y === 0 || !Game.current.blocks[y - 1][x];
-              const noBot   = y === Game.current.blocks.length - 1 || !Game.current.blocks[y + 1][x];
-              const noLeft  = x === 0 || !Game.current.blocks[y][x - 1];
-              const noRight = x === Game.current.blocks[y].length - 1 || !Game.current.blocks[y][x + 1];
-              if (noTop)    this.drawEdge(ctx, px, py, px + BLOCK, py);
-              if (noBot)    this.drawEdge(ctx, px, py + BLOCK, px + BLOCK, py + BLOCK);
-              if (noLeft)   this.drawEdge(ctx, px, py, px, py + BLOCK);
-              if (noRight)  this.drawEdge(ctx, px + BLOCK, py, px + BLOCK, py + BLOCK);
-            }
+      drawGhostOutline(ctx, ghostY, BLOCK) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.lineWidth = Math.max(1.2, BLOCK / 16);
+        ctx.setLineDash([BLOCK * 0.2, BLOCK * 0.15]);
+        for (let y = 0; y < Game.current.blocks.length; y++) {
+          for (let x = 0; x < Game.current.blocks[y].length; x++) {
+            if (!Game.current.blocks[y][x]) continue;
+            const px = (Game.current.x + x) * BLOCK;
+            const py = (ghostY + y) * BLOCK;
+            const noTop   = y === 0 || !Game.current.blocks[y - 1][x];
+            const noBot   = y === Game.current.blocks.length - 1 || !Game.current.blocks[y + 1][x];
+            const noLeft  = x === 0 || !Game.current.blocks[y][x - 1];
+            const noRight = x === Game.current.blocks[y].length - 1 || !Game.current.blocks[y][x + 1];
+            if (noTop)    this.drawEdge(ctx, px, py, px + BLOCK, py);
+            if (noBot)    this.drawEdge(ctx, px, py + BLOCK, px + BLOCK, py + BLOCK);
+            if (noLeft)   this.drawEdge(ctx, px, py, px, py + BLOCK);
+            if (noRight)  this.drawEdge(ctx, px + BLOCK, py, px + BLOCK, py + BLOCK);
           }
-          ctx.restore();
         }
+        ctx.restore();
+      },
 
+      drawNext(nextCtx) {
+        const NEXT_W = view.NEXT_W;
+        const NEXT_H = view.NEXT_H;
         nextCtx.fillStyle = '#16213e';
         nextCtx.fillRect(0, 0, NEXT_W, NEXT_H);
         if (Game.next) {
@@ -1600,8 +1647,6 @@
           const cy = Math.floor((NEXT_H - Game.next.blocks.length * bs) / 2);
           this.renderBlocks(nextCtx, Game.next.blocks, 0, 0, Game.next.color, bs, cx, cy);
         }
-
-        Particles.draw(ctx, BLOCK);
       },
     };
 
@@ -1628,15 +1673,28 @@
       BLOCK: 30, VIEW_W: 0, VIEW_H: 0, NEXT_W: 0, NEXT_H: 0,
 
       init() {
+        this.initRefs();
+        this.initLangOptions();
+      },
+
+      // -- DOM refs --
+
+      initRefs() {
+        // Canvases
         this._canvas = document.getElementById('board');
         this._ctx = this._canvas.getContext('2d');
         this._nextCanvas = document.getElementById('next-canvas');
         this._nextCtx = this._nextCanvas.getContext('2d');
+        // Layout
         this._hardDropBtn = document.getElementById('hard-drop-btn');
         this._wrapper = document.querySelector('.wrapper');
+        this._gameArea = document.querySelector('.game-area');
+        // Controls
         this._pauseBtn = document.getElementById('pause-btn');
         this._settingsBtn = document.getElementById('settings-btn');
         this._menu = document.getElementById('settings-menu');
+        this._actionBtns = document.querySelectorAll('[data-action]');
+        // Settings toggles
         this._ghostToggle = document.getElementById('ghost-toggle');
         this._ghostIndicator = document.getElementById('ghost-indicator');
         this._sevenBagToggle = document.getElementById('sevenbag-toggle');
@@ -1645,8 +1703,36 @@
         this._blackWhiteIndicator = document.getElementById('blackwhite-indicator');
         this._gridToggle = document.getElementById('grid-toggle');
         this._gridIndicator = document.getElementById('grid-indicator');
+        // Language
         this._langToggle = document.getElementById('lang-toggle');
         this._langSubmenu = document.getElementById('lang-submenu');
+        // Ranking
+        this._rankingToggle = document.getElementById('ranking-toggle');
+        this._rankingSubmenu = document.getElementById('ranking-submenu');
+        // Overlays
+        this._overlayPause = document.getElementById('overlay-pause');
+        this._overlayOver = document.getElementById('overlay-over');
+        // Stats
+        this._stats = {
+          score: document.getElementById('score'),
+          level: document.getElementById('level'),
+          lines: document.getElementById('lines')
+        };
+        // Game over
+        this._overMsg = document.getElementById('over-msg');
+        this._overSoClose = document.getElementById('over-msg-soclose');
+        this._overYouCan = document.getElementById('over-msg-youcan');
+        this._overYourScore = document.getElementById('over-yourscore');
+        this._overYourVal = document.getElementById('over-your');
+        this._overBest = document.getElementById('over-bestline');
+        this._overBestVal = document.getElementById('over-bestline-val');
+        this._overPrevBest = document.getElementById('over-prevbest');
+        this._overPrevVal = document.getElementById('over-prev');
+      },
+
+      // -- UI construction --
+
+      initLangOptions() {
         this._langSubmenu.innerHTML = '';
         I18N.langs.forEach(lang => {
           const btn = document.createElement('button');
@@ -1664,39 +1750,27 @@
           this._langSubmenu.appendChild(btn);
         });
         this._langOptions = this._langSubmenu.querySelectorAll('.lang-option');
-        this._rankingToggle = document.getElementById('ranking-toggle');
-        this._rankingSubmenu = document.getElementById('ranking-submenu');
-        this._overlayPause = document.getElementById('overlay-pause');
-        this._overlayOver = document.getElementById('overlay-over');
-        this._stats = {
-          score: document.getElementById('score'),
-          level: document.getElementById('level'),
-          lines: document.getElementById('lines')
-        };
-        this._overMsg = document.getElementById('over-msg');
-        this._overMsgSoClose = document.getElementById('over-msg-soclose');
-        this._overMsgYouCan = document.getElementById('over-msg-youcan');
-        this._overYourscore = document.getElementById('over-yourscore');
-        this._overYour = document.getElementById('over-your');
-        this._overBestline = document.getElementById('over-bestline');
-        this._overBestlineVal = document.getElementById('over-bestline-val');
-        this._overPrevbest = document.getElementById('over-prevbest');
-        this._overPrev = document.getElementById('over-prev');
-        this._actionBtns = document.querySelectorAll('[data-action]');
-        this._gameArea = document.querySelector('.game-area');
       },
+
+      // -- Getters --
 
       get ctx()        { return this._ctx; },
       get nextCtx()    { return this._nextCtx; },
       get actionBtns() { return this._actionBtns; },
       get langOptions() { return this._langOptions; },
 
+      // -- Stats --
+
       setStat(k, v)    { this._stats[k].textContent = v; },
       setStats()       { this.setStat('score', Game.score); this.setStat('level', Game.level); this.setStat('lines', Game.lines); },
+
+      // -- Shake --
 
       applyShake(x, y) {
         this._gameArea.style.transform = (x || y) ? `translate(${x}px, ${y}px)` : '';
       },
+
+      // -- Overlays --
 
       showOverlay(name) {
         this._overlayPause.classList.add('hidden');
@@ -1708,40 +1782,47 @@
       renderGameOver(state, score, prevBest) {
         const hide = el => el.classList.add('hidden');
         const show = el => el.classList.remove('hidden');
-        hide(this._overMsg); hide(this._overMsgSoClose); hide(this._overMsgYouCan);
-        hide(this._overYourscore); hide(this._overBestline); hide(this._overPrevbest);
+        hide(this._overMsg); hide(this._overSoClose); hide(this._overYouCan);
+        hide(this._overYourScore); hide(this._overBest); hide(this._overPrevBest);
         if (state === 'newBest') {
-          this._overBestlineVal.textContent = score;
-          show(this._overBestline);
+          this._overBestVal.textContent = score;
+          show(this._overBest);
           if (prevBest !== null) {
-            this._overPrev.textContent = prevBest;
-            show(this._overPrevbest);
+            this._overPrevVal.textContent = prevBest;
+            show(this._overPrevBest);
           }
         } else if (state === 'tiedBest') {
-          show(this._overMsg); show(this._overMsgSoClose);
-          this._overYour.textContent = score; show(this._overYourscore);
-          this._overBestlineVal.textContent = prevBest; show(this._overBestline);
+          show(this._overMsg); show(this._overSoClose);
+          this._overYourVal.textContent = score; show(this._overYourScore);
+          this._overBestVal.textContent = prevBest; show(this._overBest);
         } else if (state === 'notBest') {
-          show(this._overMsg); show(this._overMsgYouCan);
-          this._overYour.textContent = score; show(this._overYourscore);
-          this._overBestlineVal.textContent = prevBest; show(this._overBestline);
+          show(this._overMsg); show(this._overYouCan);
+          this._overYourVal.textContent = score; show(this._overYourScore);
+          this._overBestVal.textContent = prevBest; show(this._overBest);
         } else { // noBest
-          this._overYour.textContent = score; show(this._overYourscore);
+          this._overYourVal.textContent = score; show(this._overYourScore);
         }
       },
 
+      // -- Pause button --
+
       setPauseBtnVisible(v) { this._pauseBtn.classList.toggle('hidden', !v); },
       setPauseAriaLabel(paused) { this._pauseBtn.setAttribute('aria-label', I18N.t(paused ? 'resumeLabel' : 'pause')); },
+
+      // -- Settings menu --
 
       setSettingsMenuOpen(open) {
         this._menu.classList.toggle('open', open);
         this._settingsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       },
       isSettingsMenuOpen() { return this._menu.classList.contains('open'); },
-      closeSettingsMenu() {
-        if (this.isLangSubmenuOpen()) this.setLangSubmenuOpen(false);
+      closeAllSubmenus() {
+        this.closeLangSubmenu();
         this.closeRankingSubmenu();
+      },
 
+      closeSettingsMenu() {
+        this.closeAllSubmenus();
         if (!this.isSettingsMenuOpen()) return;
         this.setSettingsMenuOpen(false);
         this.blurMenuFocus();
@@ -1755,6 +1836,8 @@
       focusSettingsBtn()   { this._settingsBtn.focus(); },
       focusGhostToggle()   { this._ghostToggle.focus(); },
       focusLangToggle()      { this._langToggle.focus(); },
+
+      // -- Language submenu --
 
       setLangSubmenuOpen(open) {
         this._langSubmenu.classList.toggle('open', open);
@@ -1778,6 +1861,8 @@
         const label = I18N.t('langLabel');
         this._langToggle.querySelector('.label').textContent = `${label}: ${name}`;
       },
+
+      // -- Ranking submenu --
 
       setRankingSubmenuOpen(open) {
         this._rankingSubmenu.classList.toggle('open', open);
@@ -1833,6 +1918,8 @@
         sub.appendChild(clear);
       },
 
+      // -- Indicators --
+
       _setIndicator(indicatorEl, toggleEl, on) {
         indicatorEl.classList.toggle('on', on);
         toggleEl.setAttribute('aria-checked', on ? 'true' : 'false');
@@ -1843,10 +1930,14 @@
       setBlackWhiteIndicator(on) { this._setIndicator(this._blackWhiteIndicator, this._blackWhiteToggle, on); },
       setGridIndicator(on) { this._setIndicator(this._gridIndicator, this._gridToggle, on); },
 
+      // -- Body state --
+
       setBodyState(paused, gameOver) {
         document.body.classList.toggle('paused', paused);
         document.body.classList.toggle('game-over', gameOver);
       },
+
+      // -- Resize --
 
       _resizeCanvas(canvas, ctx, w, h, ratio) {
         canvas.style.width  = w + 'px';
@@ -1998,6 +2089,8 @@
         this._bindVisibility();
       },
 
+      // -- Outside click --
+
       _bindOutsideClick() {
         document.addEventListener('click', e => {
           this._closeSubmenuOnOutsideClick(
@@ -2023,6 +2116,8 @@
         if (submenuEl.contains(e.target) || toggleEl.contains(e.target)) return;
         closeFn();
       },
+
+      // -- Keyboard --
 
       _bindKeyboard() {
         document.addEventListener('keydown', e => {
@@ -2084,6 +2179,8 @@
         });
       },
 
+      // -- Mobile helpers --
+
       _bindHold(button, action, isSoft = false) {
         let t1 = null, t2 = null, pid = null;
         const start = e => {
@@ -2126,6 +2223,8 @@
         });
         button.addEventListener('contextmenu', e => e.preventDefault());
       },
+
+      // -- Mobile --
 
       _bindMobile() {
         const ACTIONS = {
@@ -2176,6 +2275,8 @@
         });
       },
 
+      // -- Settings --
+
       _bindSettings() {
         view._settingsBtn.addEventListener('click', () => {
           const isOpen = view.isSettingsMenuOpen();
@@ -2189,34 +2290,20 @@
           }
         });
 
-        view._ghostToggle.addEventListener('click', () => {
-          view.setLangSubmenuOpen(false);
-          view.closeRankingSubmenu();
-          Settings.toggleGhost();
-          view.setGhostIndicator(Settings.ghostEnabled);
-        });
-
-        view._sevenBagToggle.addEventListener('click', () => {
-          view.setLangSubmenuOpen(false);
-          view.closeRankingSubmenu();
-          Settings.toggleSevenBag();
-          view.setSevenBagIndicator(Settings.sevenBagEnabled);
-          Game.bag = [];
-          if (Settings.sevenBagEnabled) Game.fillBag();
-        });
-
-        view._blackWhiteToggle.addEventListener('click', () => {
-          view.setLangSubmenuOpen(false);
-          view.closeRankingSubmenu();
-          Settings.toggleBlackWhite();
-          view.setBlackWhiteIndicator(Settings.blackWhiteEnabled);
-        });
-
-        view._gridToggle.addEventListener('click', () => {
-          view.setLangSubmenuOpen(false);
-          view.closeRankingSubmenu();
-          Settings.toggleGrid();
-          view.setGridIndicator(Settings.gridEnabled);
+        const SETTINGS_TOGGLES = [
+          { el: '_ghostToggle', toggle: 'toggleGhost', field: 'ghostEnabled', indicator: 'setGhostIndicator' },
+          { el: '_sevenBagToggle', toggle: 'toggleSevenBag', field: 'sevenBagEnabled', indicator: 'setSevenBagIndicator',
+            after: () => { Game.bag = []; if (Settings.sevenBagEnabled) Game.fillBag(); } },
+          { el: '_blackWhiteToggle', toggle: 'toggleBlackWhite', field: 'blackWhiteEnabled', indicator: 'setBlackWhiteIndicator' },
+          { el: '_gridToggle', toggle: 'toggleGrid', field: 'gridEnabled', indicator: 'setGridIndicator' },
+        ];
+        SETTINGS_TOGGLES.forEach(cfg => {
+          view[cfg.el].addEventListener('click', () => {
+            view.closeAllSubmenus();
+            Settings[cfg.toggle]();
+            view[cfg.indicator](Settings[cfg.field]);
+            if (cfg.after) cfg.after();
+          });
         });
 
         view._langToggle.addEventListener('click', () => {
@@ -2254,6 +2341,8 @@
           });
         });
       },
+
+      // -- Visibility --
 
       _bindVisibility() {
         document.addEventListener('visibilitychange', () => {
