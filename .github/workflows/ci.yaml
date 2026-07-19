@@ -20,9 +20,7 @@ jobs:
 
       - name: JS Syntax Check
         run: |
-          sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' > /tmp/check.js
-          node --check /tmp/check.js
-          rm /tmp/check.js
+          sed -n '/<script>/,/<\/script>/p' index.html | sed '1d;$d' | node --check -
 
       - name: Docker Login
         uses: docker/login-action@v4
