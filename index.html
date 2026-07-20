@@ -266,7 +266,7 @@
       line-height: 0;
       background: #0f0f23;
     }
-    #next-canvas { border: none; }
+    #next-canvas { border: none; margin-top: 10px; }
     #pause-btn {
       right: 6px;
       font-size: 18px;
@@ -540,7 +540,7 @@
       .panel { flex: 1; padding: 6px 8px; text-align: center; }
       .panel .value { font-size: 18px; }
       .panel h3 { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
-      #next-canvas { width: 50px !important; height: 40px !important; }
+      #next-canvas { width: 60px !important; height: 42px !important; margin-top: 4px; }
       .controls { display: none; }
       .overlay-title { font-size: 22px; letter-spacing: 2px; }
       .overlay-btn { padding: 12px 24px; font-size: 14px; width: min(260px, calc(100% - 32px)); }
@@ -1636,6 +1636,17 @@
         ctx.restore();
       },
 
+      _trimBlocks(blocks) {
+        let top = blocks.length, bot = 0, left = blocks[0].length, right = 0;
+        for (let y = 0; y < blocks.length; y++)
+          for (let x = 0; x < blocks[y].length; x++)
+            if (blocks[y][x]) { top = Math.min(top, y); bot = Math.max(bot, y); left = Math.min(left, x); right = Math.max(right, x); }
+        const w = right - left + 1;
+        const trimmed = [];
+        for (let y = top; y <= bot; y++) trimmed.push(blocks[y].slice(left, left + w));
+        return trimmed;
+      },
+
       drawNext(nextCtx) {
         const NEXT_W = view.NEXT_W;
         const NEXT_H = view.NEXT_H;
@@ -1643,9 +1654,10 @@
         nextCtx.fillRect(0, 0, NEXT_W, NEXT_H);
         if (Game.next) {
           const bs = NEXT_W >= 100 ? 22 : 14;
-          const cx = Math.floor((NEXT_W - Game.next.blocks[0].length * bs) / 2);
-          const cy = Math.floor((NEXT_H - Game.next.blocks.length * bs) / 2);
-          this.renderBlocks(nextCtx, Game.next.blocks, 0, 0, Game.next.color, bs, cx, cy);
+          const trimmed = this._trimBlocks(Game.next.blocks);
+          const cx = 0;
+          const cy = trimmed.length === 1 ? bs : 0;
+          this.renderBlocks(nextCtx, trimmed, 0, 0, Game.next.color, bs, cx, cy);
         }
       },
     };
@@ -1985,8 +1997,8 @@
 
         this.resizeCanvas(this.VIEW_W, this.VIEW_H, ratio);
 
-        this.NEXT_W = isMobile ? 50 : 120;
-        this.NEXT_H = isMobile ? 40 : 83;
+        this.NEXT_W = isMobile ? 60 : 120;
+        this.NEXT_H = isMobile ? 40 : 55;
         this.resizeNextCanvas(this.NEXT_W, this.NEXT_H, ratio);
         this.positionHardDropBtn();
       },
