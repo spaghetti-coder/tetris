@@ -1337,6 +1337,7 @@
 
       tick(dt) {
         if (this.isRunning()) {
+          if (this.suppressSoftDrop) this.suppressSoftDrop = false;
           this.dropCounter += dt;
           if (this.dropCounter > this.dropInterval) this.drop();
         }
