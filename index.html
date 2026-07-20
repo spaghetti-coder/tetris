@@ -1177,12 +1177,18 @@
 
       drop() {
         this.tryLock();
+        let moved = false;
         if (!this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
           this.current.y++;
-          this.score += 1;
           this.resetLock();
+          moved = true;
         }
         this.dropCounter = 0;
+        return moved;
+      },
+
+      softDrop() {
+        if (this.drop()) this.score += 1;
       },
 
       hardDrop() {
@@ -2164,7 +2170,7 @@
             case 'arrowright': Game.startDAS(1);  e.preventDefault(); break;
             case 'arrowdown':
               Game.softDropActive = true;
-              if (!Game.suppressSoftDrop) Game.drop();
+              if (!Game.suppressSoftDrop) Game.softDrop();
               e.preventDefault();
               break;
             case 'arrowup':
@@ -2202,7 +2208,7 @@
           try { button.setPointerCapture(pid); } catch (_) {}
           if (isSoft) {
             Game.softDropActive = true;
-            if (!Game.suppressSoftDrop) Game.drop();
+            if (!Game.suppressSoftDrop) Game.softDrop();
           } else {
             action();
           }
@@ -2242,7 +2248,7 @@
         const ACTIONS = {
           left:    () => Game.move(-1),
           right:   () => Game.move(1),
-          soft:    () => Game.drop(),
+          soft:    () => Game.softDrop(),
           hard:    () => Game.hardDrop(),
           rotate:  () => Game.rotatePiece(),
           pause:   () => {
