@@ -2415,6 +2415,10 @@
           }
           view.showOverlay('over');
           view.setPauseBtnVisible(false);
+          view.setBodyState(Game.paused, Game.gameOver);
+          view.setStats();
+          Render.draw();
+          return;
         }
         view.setBodyState(Game.paused, Game.gameOver);
         view.setStats();
@@ -2469,6 +2473,7 @@
         view.setBodyState(Game.paused, Game.gameOver);
         view.setPauseAriaLabel(Game.paused);
         view.setStats();
+        if (this._lastTime > 0) this.start();
       },
     };
 
