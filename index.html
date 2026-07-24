@@ -1017,13 +1017,11 @@
       },
 
       detectLanguage() {
+        let lang = (navigator.language || '').slice(0, 2);
         try {
-          const saved = localStorage.getItem(LANG_STORAGE_KEY);
-          if (saved && this.langs.includes(saved)) return saved;
+          lang = localStorage.getItem(LANG_STORAGE_KEY) ?? lang;
         } catch (_) {}
-        const detected = (navigator.language || '').slice(0, 2);
-        if (this.langs.includes(detected)) return detected;
-        return this.default;
+        return this.langs.includes(lang) ? lang : this.default;
       },
 
       setLanguage(lang) {
@@ -1082,17 +1080,17 @@
 
     const randInt = (() => {
       const cryptoSrc = globalThis.crypto;
-      if (cryptoSrc && typeof cryptoSrc.getRandomValues === 'function') {
-        const buf = new Uint32Array(1);
-        return max => {
-          const limit = Math.floor(0x100000000 / max) * max;
-          let v;
-          do { cryptoSrc.getRandomValues(buf); v = buf[0]; }
-          while (v >= limit);
-          return v % max;
-        };
+      if (! typeof cryptoSrc?.getRandomValues === 'function') {
+        return max => Math.floor(Math.random() * max);
       }
-      return max => Math.floor(Math.random() * max);
+      const buf = new Uint32Array(1);
+      return max => {
+        const limit = Math.floor(0x100000000 / max) * max;
+        let v;
+        do { cryptoSrc.getRandomValues(buf); v = buf[0]; }
+        while (v >= limit);
+        return v % max;
+      };
     })();
 
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
