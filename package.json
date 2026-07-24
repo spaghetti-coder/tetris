@@ -1,0 +1,30 @@
+{
+  "name": "tetris",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "lint:js": "sed -n '/<script>/,/<\\/script>/p' index.html | sed '1d;$d' | npx eslint --stdin --stdin-filename=index.js",
+    "lint:css": "npx stylelint index.html",
+    "syntax": "sed -n '/<script>/,/<\\/script>/p' index.html | sed '1d;$d' | node --check -"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spaghetti-coder/tetris.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/spaghetti-coder/tetris/issues"
+  },
+  "homepage": "https://github.com/spaghetti-coder/tetris#readme",
+  "devDependencies": {
+    "eslint": "^10.7.0",
+    "globals": "^17.7.0",
+    "postcss-html": "^1.8.1",
+    "stylelint": "^17.14.1",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-order": "^8.1.1"
+  }
+}

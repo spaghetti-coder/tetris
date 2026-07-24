@@ -21,10 +21,10 @@
       --color-border-mid: #444;
       --color-border-light: #555;
       --color-border-icon: #777;
-      --color-glass: rgba(22, 33, 62, 0.88);
-      --color-glass-active: rgba(40, 55, 95, 0.95);
-      --color-accent-glow: rgba(233, 69, 96, 0.12);
-      --color-overlay: rgba(0, 0, 0, 0.72);
+      --color-glass: rgb(22 33 62 / 0.88);
+      --color-glass-active: rgb(40 55 95 / 0.95);
+      --color-accent-glow: rgb(233 69 96 / 0.12);
+      --color-overlay: rgb(0 0 0 / 0.72);
       --color-kbd-top: #2a2a44;
       --color-kbd-bot: #16162a;
       --color-kbd-border: #4a4a6a;
@@ -49,8 +49,6 @@
       gap: 24px;
       align-items: flex-start;
     }
-    .side { order: 2; }
-    .game-area { order: 1; }
     .controls-mobile {
       order: 3;
       display: none;
@@ -69,7 +67,6 @@
     }
     .icon-btn, .settings-item, .key, .overlay-btn { touch-action: manipulation; }
     .key, canvas {
-      -webkit-user-select: none;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -79,12 +76,9 @@
       border-radius: 6px;
       padding: 0;
     }
-    #settings-menu {
-      background: var(--color-panel);
-    }
-
     /* --- Components --- */
     .side {
+      order: 2;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -157,7 +151,7 @@
       padding: 2px 6px;
       font-size: 14px;
       line-height: 1.2;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
       pointer-events: none;
     }
     .settings-item .label::before {
@@ -196,8 +190,7 @@
     .controls {
       display: grid;
       grid-template-columns: auto 1fr;
-      column-gap: 10px;
-      row-gap: 6px;
+      gap: 6px 10px;
       align-items: center;
       font-size: 12px;
       color: var(--color-dim);
@@ -222,11 +215,11 @@
       border: 1px solid var(--color-kbd-border);
       border-bottom-color: var(--color-kbd-border-bot);
       border-radius: 5px;
-      font-family: 'Consolas', 'Courier New', monospace;
+      font-family: Consolas, 'Courier New', monospace;
       font-size: 11px;
       font-weight: bold;
       color: var(--color-accent);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.3);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 0 rgb(0 0 0 / 0.3);
     }
     .controls kbd svg {
       width: 12px;
@@ -261,6 +254,7 @@
       display: block;
     }
     .game-area {
+      order: 1;
       position: relative;
       display: inline-block;
       line-height: 0;
@@ -288,8 +282,9 @@
       left: 6px;
       z-index: 5;
       width: 38px;
+      background: var(--color-panel);
       display: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
     }
     #settings-menu.open {
       display: block;
@@ -341,7 +336,7 @@
       border: 1px solid var(--color-border-light);
       border-radius: 6px;
       padding: 6px 0;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
     }
     #lang-submenu {
       max-height: 240px;
@@ -501,7 +496,7 @@
     .overlay-btn.secondary:active { background: var(--color-accent-glow); }
 
     /* --- Mobile --- */
-    @media (max-width: 768px) {
+    @media (width <= 768px) {
       body { align-items: flex-start; padding: 8px; }
       .wrapper {
         position: relative;
@@ -512,8 +507,7 @@
       }
       .side {
         order: 1;
-        flex-direction: row;
-        flex-wrap: nowrap;
+        flex-flow: row nowrap;
         width: 100%;
         max-width: 320px;
         justify-content: space-between;
@@ -545,7 +539,7 @@
       .overlay-title { font-size: 22px; letter-spacing: 2px; }
       .overlay-btn { padding: 12px 24px; font-size: 14px; width: min(260px, calc(100% - 32px)); }
     }
-    @media (max-width: 768px) and (orientation: landscape) {
+    @media (width <= 768px) and (orientation: landscape) {
       body { padding: 4px; }
       .wrapper {
         flex-direction: row;
@@ -1915,7 +1909,7 @@
           if (s === Scores.lastRecorded) row.classList.add('highlight');
           const rank = document.createElement('span');
           rank.className = 'rank';
-          rank.textContent = (i + 1) + '.';
+          rank.textContent = `${i + 1}.`;
           const val = document.createElement('span');
           val.className = 'score';
           val.textContent = s;
@@ -1959,8 +1953,8 @@
       // -- Resize --
 
       _resizeCanvas(canvas, ctx, w, h, ratio) {
-        canvas.style.width  = w + 'px';
-        canvas.style.height = h + 'px';
+        canvas.style.width  = `${w}px`;
+        canvas.style.height = `${h}px`;
         canvas.width  = Math.floor(w * ratio);
         canvas.height = Math.floor(h * ratio);
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -1976,7 +1970,7 @@
         const isLandscape = window.innerWidth > window.innerHeight;
         const canvasRect = this._canvas.getBoundingClientRect();
         const wrapperRect = this._wrapper.getBoundingClientRect();
-        this._hardDropBtn.style.bottom = (wrapperRect.bottom - canvasRect.bottom) + 'px';
+        this._hardDropBtn.style.bottom = `${wrapperRect.bottom - canvasRect.bottom}px`;
         if (isLandscape) {
           this._hardDropBtn.style.left = '0px';
           this._hardDropBtn.style.right = 'auto';
@@ -2138,23 +2132,54 @@
 
       // -- Keyboard --
 
+      _handleGameOverKey(key, menuOpen) {
+        if (!menuOpen && (key === 'r' || key === 'enter')) {
+          Lifecycle.resetGame();
+        }
+      },
+
+      _handleMenuKey(key) {
+        if (key !== 'escape') return;
+        if (view.isRankingSubmenuOpen()) view.closeRankingSubmenu();
+        else if (view.isLangSubmenuOpen()) view.closeLangSubmenu();
+        else view.closeSettingsMenu();
+      },
+
+      _handleGameplayKey(key, e) {
+        switch (key) {
+          case 'arrowleft':  Game.startDAS(-1); e.preventDefault(); break;
+          case 'arrowright': Game.startDAS(1);  e.preventDefault(); break;
+          case 'arrowdown':
+            Game.softDropActive = true;
+            if (!Game.suppressSoftDrop) Game.softDrop();
+            e.preventDefault();
+            break;
+          case 'arrowup':
+          case 'x':
+            Game.rotatePiece();
+            e.preventDefault();
+            break;
+          case ' ':
+          case 'enter':
+            Game.hardDrop();
+            e.preventDefault();
+            break;
+        }
+      },
+
       _bindKeyboard() {
         document.addEventListener('keydown', e => {
           const key = e.key.toLowerCase();
           const menuOpen = view.isSettingsMenuOpen();
 
           if (Game.gameOver) {
-            if (!menuOpen && (key === 'r' || key === 'enter')) Lifecycle.resetGame();
+            this._handleGameOverKey(key, menuOpen);
             return;
           }
 
           if (menuOpen) {
-            if (key === 'escape') {
-              if (view.isRankingSubmenuOpen()) view.closeRankingSubmenu();
-              else if (view.isLangSubmenuOpen()) view.closeLangSubmenu();
-              else view.closeSettingsMenu();
-              e.preventDefault();
-            }
+            this._handleMenuKey(key);
+            if (key === 'escape') e.preventDefault();
             return;
           }
 
@@ -2166,25 +2191,7 @@
 
           if (Game.paused) return;
 
-          switch (key) {
-            case 'arrowleft':  Game.startDAS(-1); e.preventDefault(); break;
-            case 'arrowright': Game.startDAS(1);  e.preventDefault(); break;
-            case 'arrowdown':
-              Game.softDropActive = true;
-              if (!Game.suppressSoftDrop) Game.softDrop();
-              e.preventDefault();
-              break;
-            case 'arrowup':
-            case 'x':
-              Game.rotatePiece();
-              e.preventDefault();
-              break;
-            case ' ':
-            case 'enter':
-              Game.hardDrop();
-              e.preventDefault();
-              break;
-          }
+          this._handleGameplayKey(key, e);
         });
 
         document.addEventListener('keyup', e => {
