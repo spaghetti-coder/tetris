@@ -631,7 +631,7 @@
       <div class="panel controls">
         <h3 data-i18n="controls">Controls</h3>
         <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M14 5 L10 5 L10 2 L2 8 L10 14 L10 11 L14 11 Z"/></svg></kbd><kbd><svg viewBox="0 0 16 16"><path d="M2 5 L2 11 L6 11 L6 14 L14 8 L6 2 L6 5 Z"/></svg></kbd></span><span class="desc" data-i18n="move">Move</span></div>
-        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 8 L5 12 L11 12 L11 8 L14 8 L8 2 L2 8 Z"/></svg></kbd></span><span class="desc" data-i18n="rotate">Rotate</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>X</kbd><kbd>Z</kbd></span><span class="desc" data-i18n="rotate">Rotate</span></div>
         <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 4 L11 4 L11 8 L14 8 L8 14 L2 8 L5 8 Z"/></svg></kbd></span><span class="desc" data-i18n="softDrop">Soft Drop</span></div>
         <div class="ctrl-row"><span class="keys"><kbd class="wide">Space</kbd></span><span class="desc" data-i18n="hardDrop">Hard Drop</span></div>
         <div class="ctrl-row"><span class="keys"><kbd>P</kbd></span><span class="desc" data-i18n="pause">Pause</span></div>
@@ -1077,7 +1077,33 @@
 
     const COLS = 10, ROWS = 20;
     const LINE_SCORES = [0, 100, 300, 500, 800];
-    const KICK_OFFSETS = [0, -1, 1, -2, 2];
+
+    // SRS kick tables: [dx, dy] pairs, tried in order
+    // For J/L/S/T/Z pieces
+    const SRS_KICK_JLSTZ = {
+      '0>1': [[ 0, 0], [-1, 0], [+1, 0], [-1, +1], [+1, -1], [-1, -2], [+1, -2]],
+      '1>2': [[ 0, 0], [+1, 0], [-1, 0], [+1, -1], [-1, +1], [+1, +2], [-1, +2]],
+      '2>3': [[ 0, 0], [+1, 0], [-1, 0], [+1, +1], [-1, -1], [+1, -2], [-1, -2]],
+      '3>0': [[ 0, 0], [-1, 0], [+1, 0], [-1, -1], [+1, +1], [-1, +2], [+1, +2]]
+    };
+    // For I piece
+    const SRS_KICK_I = {
+      '0>1': [[+1, 0], [-2, 0], [+1, +1], [-2, -1], [+1, -2]],
+      '1>2': [[ 0, 0], [+1, 0], [-1, 0], [+1, +1], [-1, -1]],
+      '2>3': [[+1, 0], [-2, 0], [+1, -1], [-2, +1], [+1, +2]],
+      '3>0': [[ 0, 0], [-1, 0], [+1, 0], [-1, +1], [+1, -1]]
+    };
+
+    function getSRSKicks(pieceType, fromState, toState) {
+      const table = pieceType === 'I' ? SRS_KICK_I : SRS_KICK_JLSTZ;
+      // CW transition: use kicks as-is
+      if ((fromState + 1) % 4 === toState) {
+        return table[`${fromState}>${toState}`] || [[0, 0]];
+      }
+      // CCW transition: use reversed kicks of the reverse CW transition
+      const cwKey = `${toState}>${fromState}`;
+      return [...(table[cwKey] || [[0, 0]])].reverse();
+    }
     const COLORS = [
       null,
       '#00f0f0', '#0000f0', '#f0a000', '#f0f000', '#00f000', '#f00000', '#a000f0'
@@ -1159,30 +1185,63 @@
         }
       },
 
-      randomPiece() {
-        let name = PIECE_NAMES[randInt(PIECE_NAMES.length)];
-        if (Settings.sevenBagEnabled) {
+      randomPiece(typeName) {
+        const name = typeName || PIECE_NAMES[randInt(PIECE_NAMES.length)];
+        if (!typeName && Settings.sevenBagEnabled) {
           if (!this.bag.length) this.fillBag();
-          name = this.bag.pop();
         }
         const s = SHAPES[name];
         return {
+          type: name,
           blocks: s.blocks.map(r => [...r]),
           color: s.id,
           x: Math.floor((COLS - s.blocks[0].length) / 2),
-          y: 0
+          y: 0,
+          state: 0
         };
       },
 
       // -- Rotation --
 
-      rotate(blocks) {
+      rotateCW(blocks) {
         const N = blocks.length;
         const r = Array.from({ length: N }, () => Array(N).fill(0));
         for (let y = 0; y < N; y++)
           for (let x = 0; x < N; x++)
             r[x][N - 1 - y] = blocks[y][x];
         return r;
+      },
+
+      rotateCCW(blocks) {
+        const N = blocks.length;
+        const r = Array.from({ length: N }, () => Array(N).fill(0));
+        for (let y = 0; y < N; y++)
+          for (let x = 0; x < N; x++)
+            r[N - 1 - x][y] = blocks[y][x];
+        return r;
+      },
+
+      srsRotate(direction) {
+        const p = this.current;
+        if (!p || p.type === 'O') return;
+        this.resetLock();
+        const from = p.state;
+        const to = direction === 1
+          ? (from + 1) % 4
+          : (from + 3) % 4;
+        const rotated = direction === 1
+          ? this.rotateCW(p.blocks)
+          : this.rotateCCW(p.blocks);
+        const kicks = getSRSKicks(p.type, from, to);
+        for (const [dx, dy] of kicks) {
+          if (this.collidesAt(rotated, p.x + dx, p.y + dy)) continue;
+          p.blocks = rotated;
+          p.x += dx;
+          p.y += dy;
+          p.state = to;
+          this.tryLock();
+          return;
+        }
       },
 
       // -- Collision --
@@ -1234,17 +1293,7 @@
         this.tryLock();
       },
 
-      rotatePiece() {
-        const rotated = this.rotate(this.current.blocks);
-        for (const k of KICK_OFFSETS) {
-          if (this.collidesAt(rotated, this.current.x + k, this.current.y)) continue;
-          this.current.blocks = rotated;
-          this.current.x += k;
-          this.resetLock();
-          this.tryLock();
-          return;
-        }
-      },
+
 
       // -- Locking --
 
@@ -2160,7 +2209,11 @@
             break;
           case 'arrowup':
           case 'x':
-            Game.rotatePiece();
+            Game.srsRotate(1);
+            e.preventDefault();
+            break;
+          case 'z':
+            Game.srsRotate(-1);
             e.preventDefault();
             break;
           case ' ':
@@ -2262,7 +2315,7 @@
           right:   () => Game.move(1),
           soft:    () => Game.softDrop(),
           hard:    () => Game.hardDrop(),
-          rotate:  () => Game.rotatePiece(),
+          rotate:  () => Game.srsRotate(1),
           pause:   () => {
             if (Game.gameOver) return;
             if (view.isSettingsMenuOpen()) {
