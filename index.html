@@ -259,7 +259,17 @@
       line-height: 0;
       background: #0f0f23;
     }
-    #next-canvas { border: none; margin-top: 10px; }
+    /* Desktop: fixed size */
+    #board {
+      width: 320px;
+      height: 640px;
+    }
+    #next-canvas {
+      border: none;
+      margin-top: 10px;
+      width: 120px;
+      height: 48px;
+    }
     #pause-btn {
       right: 6px;
       font-size: 18px;
@@ -520,6 +530,10 @@
         justify-content: center;
         align-items: end;
       }
+      #board {
+        width: 55vw;
+        aspect-ratio: 10 / 20;
+      }
       .controls-mobile {
         display: grid;
         grid-template-columns: repeat(3, 60px);
@@ -563,6 +577,11 @@
         gap: 6px;
       }
       .game-wrapper { order: 1; }
+      /* Mobile landscape: fit within remaining space */
+      #board {
+        width: calc((100vw - 220px) / 2);
+        aspect-ratio: 10 / 20;
+      }
       .controls-mobile {
         order: 3;
         grid-template-columns: repeat(3, 42px);
@@ -1964,38 +1983,28 @@
 
       // -- Resize --
 
-      _resizeCanvas(canvas, ctx, w, h, ratio) {
-        canvas.style.width  = `${w}px`;
-        canvas.style.height = `${h}px`;
-        canvas.width  = Math.floor(w * ratio);
-        canvas.height = Math.floor(h * ratio);
-        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      },
-
-      resizeCanvas(w, h, ratio)     { this._resizeCanvas(this._canvas,    this._ctx,    w, h, ratio); },
-      resizeNextCanvas(w, h, ratio) { this._resizeCanvas(this._nextCanvas, this._nextCtx, w, h, ratio); },
-
       resize() {
         const ratio = window.devicePixelRatio;
-        const isMobile = window.innerWidth <= 768;
-        const isLandscape = isMobile && window.innerWidth > window.innerHeight;
-        let maxW = 320, availableH = 700;
-        if (isLandscape) {
-          maxW = (window.innerWidth - 220) / 2;
-          availableH = window.innerHeight - 80;
-        } else if (isMobile) {
-          maxW = window.innerWidth - 16;
-          availableH = window.innerHeight - 260;
-        }
-        this.BLOCK = clamp(Math.floor(Math.min(maxW / COLS, availableH / ROWS)), 15, 99);
+        // Clear inline styles so CSS can apply correct size for current viewport
+        this._canvas.style.width = '';
+        this._canvas.style.height = '';
+        const rect = this._canvas.getBoundingClientRect();
+        this.BLOCK = clamp(Math.floor(Math.min(rect.width / COLS, rect.height / ROWS)), 15, 99);
         this.VIEW_W = this.BLOCK * COLS;
         this.VIEW_H = this.BLOCK * ROWS;
-
-        this.resizeCanvas(this.VIEW_W, this.VIEW_H, ratio);
-
-        this.NEXT_W = isMobile ? 60 : 120;
-        this.NEXT_H = isMobile ? 28 : 48;
-        this.resizeNextCanvas(this.NEXT_W, this.NEXT_H, ratio);
+        this._canvas.style.width = `${this.VIEW_W}px`;
+        this._canvas.style.height = `${this.VIEW_H}px`;
+        // Read actual size after CSS constraints (max-height, etc) are applied
+        const finalRect = this._canvas.getBoundingClientRect();
+        this._canvas.width  = Math.floor(finalRect.width * ratio);
+        this._canvas.height = Math.floor(finalRect.height * ratio);
+        this._ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        const nextRect = this._nextCanvas.getBoundingClientRect();
+        this._nextCanvas.width  = Math.floor(nextRect.width * ratio);
+        this._nextCanvas.height = Math.floor(nextRect.height * ratio);
+        this._nextCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        this.NEXT_W = nextRect.width;
+        this.NEXT_H = nextRect.height;
       },
     };
 
