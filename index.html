@@ -55,7 +55,6 @@
     }
     #hard-drop-btn {
       display: none;
-      position: absolute;
       z-index: 5;
     }
 
@@ -513,7 +512,14 @@
         min-width: 0;
         gap: 6px;
       }
-      .game-area { order: 2; }
+      .game-wrapper {
+        order: 2;
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: end;
+      }
       .controls-mobile {
         display: grid;
         grid-template-columns: repeat(3, 60px);
@@ -523,6 +529,9 @@
       }
       #hard-drop-btn {
         display: flex;
+        position: absolute;
+        bottom: 0;
+        right: 0;
         width: 60px;
         height: 60px;
       }
@@ -553,7 +562,7 @@
         max-width: none;
         gap: 6px;
       }
-      .game-area { order: 1; }
+      .game-wrapper { order: 1; }
       .controls-mobile {
         order: 3;
         grid-template-columns: repeat(3, 42px);
@@ -565,6 +574,8 @@
       #hard-drop-btn {
         width: 42px;
         height: 42px;
+        left: 0;
+        right: auto;
       }
       .panel { padding: 4px 8px; min-width: 90px; }
       .panel h3 { font-size: 10px; }
@@ -607,10 +618,11 @@
         <div class="ctrl-row"><span class="keys"><kbd>R</kbd></span><span class="desc" data-i18n="restart">Restart</span></div>
       </div>
     </div>
-    <div class="game-area">
-      <button id="settings-btn" class="icon-btn" type="button" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings" aria-haspopup="menu" aria-expanded="false">
-        <i class="fa-solid fa-bars" aria-hidden="true"></i>
-      </button>
+    <div class="game-wrapper">
+      <div class="game-area">
+        <button id="settings-btn" class="icon-btn" type="button" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings" aria-haspopup="menu" aria-expanded="false">
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
       <div id="settings-menu" role="menu" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings">
         <div class="submenu-wrapper">
           <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
@@ -667,6 +679,8 @@
         <div class="overlay-score hidden" id="over-prevbest"><span data-i18n="previousBest">Previous Best:</span> <b id="over-prev">0</b></div>
         <button class="overlay-btn" data-action="restart" type="button" data-i18n="playAgain">PLAY AGAIN</button>
       </div>
+      </div>
+      <button id="hard-drop-btn" class="key" data-action="hard" type="button" data-i18n="hardDrop" data-i18n-attr="aria-label" aria-label="Hard Drop"><i class="fa-solid fa-angles-down" aria-hidden="true"></i></button>
     </div>
     <div class="controls-mobile">
       <button class="key up" data-action="rotate" type="button"><i class="fa-solid fa-up-long" aria-hidden="true"></i></button>
@@ -674,7 +688,6 @@
       <button class="key down" data-action="soft" type="button"><i class="fa-solid fa-down-long" aria-hidden="true"></i></button>
       <button class="key right" data-action="right" type="button"><i class="fa-solid fa-right-long" aria-hidden="true"></i></button>
     </div>
-    <button id="hard-drop-btn" class="key" data-action="hard" type="button" data-i18n="hardDrop" data-i18n-attr="aria-label" aria-label="Hard Drop"><i class="fa-solid fa-angles-down" aria-hidden="true"></i></button>
   </div>
 
   <script>
@@ -1678,7 +1691,7 @@
       _stats: {},
       _actionBtns: null,
       _gameArea: null,
-      _hardDropBtn: null,
+
       _rankingSubmenu: null,
       _rankingToggle: null,
       _wrapper: null,
@@ -1698,7 +1711,7 @@
         this._nextCanvas = document.getElementById('next-canvas');
         this._nextCtx = this._nextCanvas.getContext('2d');
         // Layout
-        this._hardDropBtn = document.getElementById('hard-drop-btn');
+
         this._wrapper = document.querySelector('.wrapper');
         this._gameArea = document.querySelector('.game-area');
         // Controls
@@ -1962,23 +1975,6 @@
       resizeCanvas(w, h, ratio)     { this._resizeCanvas(this._canvas,    this._ctx,    w, h, ratio); },
       resizeNextCanvas(w, h, ratio) { this._resizeCanvas(this._nextCanvas, this._nextCtx, w, h, ratio); },
 
-      positionHardDropBtn() {
-        if (!this._hardDropBtn) return;
-        const isMobile = window.innerWidth <= 768;
-        if (!isMobile) return;
-        const isLandscape = window.innerWidth > window.innerHeight;
-        const canvasRect = this._canvas.getBoundingClientRect();
-        const wrapperRect = this._wrapper.getBoundingClientRect();
-        this._hardDropBtn.style.bottom = `${wrapperRect.bottom - canvasRect.bottom}px`;
-        if (isLandscape) {
-          this._hardDropBtn.style.left = '0px';
-          this._hardDropBtn.style.right = 'auto';
-        } else {
-          this._hardDropBtn.style.right = '0px';
-          this._hardDropBtn.style.left = 'auto';
-        }
-      },
-
       resize() {
         const ratio = window.devicePixelRatio;
         const isMobile = window.innerWidth <= 768;
@@ -2000,7 +1996,6 @@
         this.NEXT_W = isMobile ? 60 : 120;
         this.NEXT_H = isMobile ? 28 : 48;
         this.resizeNextCanvas(this.NEXT_W, this.NEXT_H, ratio);
-        this.positionHardDropBtn();
       },
     };
 
