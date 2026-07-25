@@ -1186,9 +1186,12 @@
       },
 
       randomPiece(typeName) {
-        const name = typeName || PIECE_NAMES[randInt(PIECE_NAMES.length)];
-        if (!typeName && Settings.sevenBagEnabled) {
+        let name = PIECE_NAMES[randInt(PIECE_NAMES.length)];
+        if (typeName) {
+          name = typeName;
+        } else if (Settings.sevenBagEnabled) {
           if (!this.bag.length) this.fillBag();
+          name = this.bag.pop();
         }
         const s = SHAPES[name];
         return {
