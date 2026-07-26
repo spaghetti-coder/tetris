@@ -1165,6 +1165,8 @@
       softDropActive: false, suppressSoftDrop: false,
       lockTimer: null, dasTimer: null, arrTimer: null, dasDir: 0,
       bag: [],
+      _ghostY: 0,
+      _ghostDirty: true,
 
       // -- Status --
 
@@ -1245,6 +1247,7 @@
           p.x += dx;
           p.y += dy;
           p.state = to;
+          this.invalidateGhost();
           this.tryLock();
           return;
         }
@@ -1271,6 +1274,7 @@
         let moved = false;
         if (!this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
           this.current.y++;
+          this.invalidateGhost();
           this.resetLock();
           moved = true;
         }
@@ -1287,6 +1291,7 @@
           this.current.y++;
           this.score += 2;
         }
+        this.invalidateGhost();
         this.resetLock();
         vibrate(15);
         this.lock();
@@ -1295,6 +1300,7 @@
       move(dir) {
         if (this.collidesAt(this.current.blocks, this.current.x + dir, this.current.y)) return;
         this.current.x += dir;
+        this.invalidateGhost();
         this.resetLock();
         this.tryLock();
       },
@@ -1330,6 +1336,7 @@
         this.current = this.next;
         this.next = this.randomPiece();
         this.dropCounter = 0;
+        this.invalidateGhost();
         // Suppress initial drop tick when soft-drop was held across lock
         if (this.softDropActive) this.suppressSoftDrop = true;
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) this.endGame();
@@ -1367,10 +1374,17 @@
       },
 
       computeGhostY() {
-        if (!this.current) return 0;
+        if (!this._ghostDirty) return this._ghostY;
+        this._ghostDirty = false;
+        if (!this.current) { this._ghostY = 0; return 0; }
         let y = this.current.y;
         while (!this.collidesAt(this.current.blocks, this.current.x, y + 1)) y++;
+        this._ghostY = y;
         return y;
+      },
+
+      invalidateGhost() {
+        this._ghostDirty = true;
       },
 
       // -- DAS / ARR --
@@ -1406,6 +1420,8 @@
         this.dropInterval = 1000;
         this.dropCounter = 0;
         this.bag = [];
+        this._ghostY = 0;
+        this._ghostDirty = true;
         this.current = this.randomPiece();
         this.next = this.randomPiece();
         this.clearSoftDrop();
@@ -1736,9 +1752,16 @@
         return trimmed;
       },
 
+      _nextCache: null,
+      _nextSize: { w: 0, h: 0 },
+
       drawNext(nextCtx) {
         const NEXT_W = view.NEXT_W;
         const NEXT_H = view.NEXT_H;
+        const nextType = Game.next?.type;
+        if (this._nextCache === nextType && this._nextSize.w === NEXT_W && this._nextSize.h === NEXT_H) return;
+        this._nextCache = nextType;
+        this._nextSize = { w: NEXT_W, h: NEXT_H };
         nextCtx.fillStyle = '#16213e';
         nextCtx.fillRect(0, 0, NEXT_W, NEXT_H);
         if (Game.next) {
@@ -1772,6 +1795,7 @@
       _rankingToggle: null,
       _wrapper: null,
       BLOCK: 30, VIEW_W: 0, VIEW_H: 0, NEXT_W: 0, NEXT_H: 0,
+      _statsCache: {},
 
       init() {
         this.initRefs();
@@ -1863,11 +1887,25 @@
       // -- Stats --
 
       setStat(k, v)    { this._stats[k].textContent = v; },
-      setStats()       { this.setStat('score', Game.score); this.setStat('level', Game.level); this.setStat('lines', Game.lines); },
+      setStats() {
+        const stats = { score: Game.score, level: Game.level, lines: Game.lines };
+        for (const k in stats) {
+          if (this._statsCache[k] !== stats[k]) {
+            this._statsCache[k] = stats[k];
+            this.setStat(k, stats[k]);
+          }
+        }
+      },
 
       // -- Shake --
 
+      _shakeX: 0,
+      _shakeY: 0,
+
       applyShake(x, y) {
+        if (this._shakeX === x && this._shakeY === y) return;
+        this._shakeX = x;
+        this._shakeY = y;
         this._gameArea.style.transform = (x || y) ? `translate(${x}px, ${y}px)` : '';
       },
 
