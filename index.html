@@ -59,6 +59,10 @@
       display: none;
       z-index: 5;
     }
+    #hold-btn {
+      display: none;
+      z-index: 5;
+    }
 
     /* --- Shared utilities --- */
     .icon-btn, .settings-item, .key {
@@ -74,6 +78,16 @@
       border: 1px solid var(--color-border-icon);
       border-radius: 6px;
       padding: 0;
+    }
+    .side.left {
+      order: 0;
+      min-width: 120px;
+    }
+    #hold-canvas {
+      border: none;
+      margin-top: 10px;
+      width: 120px;
+      height: 48px;
     }
     /* --- Components --- */
     .side {
@@ -505,6 +519,19 @@
         min-width: 0;
         gap: 6px;
       }
+      .side.left {
+        order: 0;
+        flex-flow: row nowrap;
+        width: auto;
+        min-width: 0;
+        display: none !important;
+      }
+      .side.left .panel {
+        padding: 6px 8px;
+        min-width: 80px;
+      }
+      .side.left h3 { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
+      #hold-canvas { width: 60px !important; height: 30px !important; margin-top: 4px; }
       .game-wrapper {
         order: 2;
         position: relative;
@@ -534,6 +561,32 @@
         width: var(--btn-size);
         height: var(--btn-size);
       }
+      #hold-btn {
+        display: flex;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: var(--btn-size);
+        height: var(--btn-size);
+        padding: 3px 4px 2px;
+        overflow: hidden;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+      }
+      #hold-btn .hold-label {
+        font-size: 8px;
+        color: var(--color-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1;
+      }
+      #hold-btn canvas {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        display: block;
+      }
       .controls-mobile .up    { grid-column: 2; grid-row: 1; }
       .controls-mobile .left  { grid-column: 1; grid-row: 2; }
       .controls-mobile .down  { grid-column: 2; grid-row: 2; }
@@ -561,6 +614,16 @@
         max-width: none;
         gap: 6px;
       }
+      .side.left {
+        order: 0;
+        flex-direction: column;
+        width: auto;
+        gap: 6px;
+        display: none !important;
+      }
+      .side.left .panel { padding: 4px 8px; min-width: 90px; }
+      .side.left h3 { font-size: 10px; }
+      #hold-canvas { width: 60px !important; height: 30px !important; margin-top: 4px; }
       .game-wrapper { order: 1; }
       /* Mobile landscape: fit within remaining space */
       #board {
@@ -578,8 +641,25 @@
       #hard-drop-btn {
         width: var(--btn-size);
         height: var(--btn-size);
+        right: 0;
+        left: auto;
+      }
+      #hold-btn {
+        width: var(--btn-size);
+        height: var(--btn-size);
         left: 0;
-        right: auto;
+        bottom: 0;
+        padding: 3px 4px 2px;
+        overflow: hidden;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+      }
+      #hold-btn canvas {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        display: block;
       }
       .panel { padding: 4px 8px; min-width: 90px; }
       .panel h3 { font-size: 10px; }
@@ -618,8 +698,15 @@
         <div class="ctrl-row"><span class="keys"><kbd>X</kbd><kbd>Z</kbd></span><span class="desc" data-i18n="rotate">Rotate</span></div>
         <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 4 L11 4 L11 8 L14 8 L8 14 L2 8 L5 8 Z"/></svg></kbd></span><span class="desc" data-i18n="softDrop">Soft Drop</span></div>
         <div class="ctrl-row"><span class="keys"><kbd class="wide">Space</kbd></span><span class="desc" data-i18n="hardDrop">Hard Drop</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>C</kbd></span><span class="desc" data-i18n="hold">Hold</span></div>
         <div class="ctrl-row"><span class="keys"><kbd>P</kbd></span><span class="desc" data-i18n="pause">Pause</span></div>
         <div class="ctrl-row"><span class="keys"><kbd>R</kbd></span><span class="desc" data-i18n="restart">Restart</span></div>
+      </div>
+    </div>
+    <div class="side left">
+      <div class="panel">
+        <h3 data-i18n="hold">Hold</h3>
+        <canvas id="hold-canvas"></canvas>
       </div>
     </div>
     <div class="game-wrapper">
@@ -684,6 +771,7 @@
         <button class="overlay-btn" data-action="restart" type="button" data-i18n="playAgain">PLAY AGAIN</button>
       </div>
       </div>
+      <button id="hold-btn" class="key" data-action="hold" type="button" data-i18n="hold" data-i18n-attr="aria-label" aria-label="Hold"><span class="hold-label" data-i18n="hold">Hold</span><canvas id="hold-btn-canvas"></canvas></button>
       <button id="hard-drop-btn" class="key" data-action="hard" type="button" data-i18n="hardDrop" data-i18n-attr="aria-label" aria-label="Hard Drop"><i class="fa-solid fa-angles-down" aria-hidden="true"></i></button>
     </div>
     <div class="controls-mobile">
@@ -748,6 +836,7 @@
           rotate: 'Rotate',
           softDrop: 'Soft Drop',
           hardDrop: 'Hard Drop',
+          hold: 'Hold',
           pause: 'Pause',
           restart: 'Restart',
           confirmRestart: 'Confirm Restart',
@@ -783,6 +872,7 @@
           rotate: 'Поворот',
           softDrop: 'Мягкое падение',
           hardDrop: 'Жёсткое падение',
+          hold: 'Карман',
           pause: 'Пауза',
           restart: 'Рестарт',
           confirmRestart: 'Подтвердить рестарт',
@@ -818,6 +908,7 @@
           rotate: 'Завъртане',
           softDrop: 'Бавно спускане',
           hardDrop: 'Бързо спускане',
+          hold: 'Резерва',
           pause: 'Пауза',
           restart: 'Рестарт',
           confirmRestart: 'Потвърди рестарт',
@@ -853,6 +944,7 @@
           rotate: 'Rotație',
           softDrop: 'Coborâre lentă',
           hardDrop: 'Coborâre rapidă',
+          hold: 'Rezervă',
           pause: 'Pauză',
           restart: 'Restart',
           confirmRestart: 'Confirmă restart',
@@ -888,6 +980,7 @@
           rotate: 'Rotation',
           softDrop: 'Chute lente',
           hardDrop: 'Chute rapide',
+          hold: 'Réserve',
           pause: 'Pause',
           restart: 'Redémarrer',
           confirmRestart: 'Confirmer redémarrage',
@@ -923,6 +1016,7 @@
           rotate: 'Rotar',
           softDrop: 'Caída lenta',
           hardDrop: 'Caída rápida',
+          hold: 'Reserva',
           pause: 'Pausa',
           restart: 'Reiniciar',
           confirmRestart: 'Confirmar reinicio',
@@ -958,6 +1052,7 @@
           rotate: '旋转',
           softDrop: '软降',
           hardDrop: '硬降',
+          hold: '暂存',
           pause: '暂停',
           restart: '重新开始',
           confirmRestart: '确认重新开始',
@@ -993,6 +1088,7 @@
           rotate: '回転',
           softDrop: 'ソフトドロップ',
           hardDrop: 'ハードドロップ',
+          hold: 'ホールド',
           pause: '一時停止',
           restart: 'リスタート',
           confirmRestart: 'リスタート確認',
@@ -1145,6 +1241,8 @@
       score: 0, level: 1, lines: 0,
       paused: false, gameOver: false,
       current: null, next: null,
+      heldPiece: null,
+      holdUsed: false,
       dropCounter: 0, dropInterval: 1000,
       softDropActive: false, suppressSoftDrop: false,
       lockTimer: null, dasTimer: null, arrTimer: null, dasDir: 0,
@@ -1281,6 +1379,29 @@
         this.lock();
       },
 
+      hold() {
+        if (!this.current || this.holdUsed) return;
+        const currentType = this.current.type;
+        this.resetLock();
+        this.stopDAS();
+        this.clearSoftDrop();
+        if (this.heldPiece === null) {
+          this.heldPiece = currentType;
+          this.current = this.next;
+          this.next = this.randomPiece();
+        } else {
+          const swapType = this.heldPiece;
+          this.heldPiece = currentType;
+          this.current = this.randomPiece(swapType);
+        }
+        this.holdUsed = true;
+        this.invalidateGhost();
+        this.dropCounter = 0;
+        if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) {
+          this.endGame();
+        }
+      },
+
       move(dir) {
         if (this.collidesAt(this.current.blocks, this.current.x + dir, this.current.y)) return;
         this.current.x += dir;
@@ -1317,6 +1438,7 @@
               this.grid[ny][this.current.x + x] = this.current.color;
             }
         this.clearLines();
+        this.holdUsed = false;
         this.current = this.next;
         this.next = this.randomPiece();
         this.dropCounter = 0;
@@ -1404,6 +1526,8 @@
         this.dropInterval = 1000;
         this.dropCounter = 0;
         this.bag = [];
+        this.heldPiece = null;
+        this.holdUsed = false;
         this._ghostY = 0;
         this._ghostDirty = true;
         this.current = this.randomPiece();
@@ -1658,7 +1782,35 @@
         this.drawPiece(ctx, BLOCK);
         if (Settings.ghostEnabled && Game.current) this.drawGhost(ctx, BLOCK);
         this.drawNext(nextCtx);
+        this.drawHold(view.holdCtx);
+        if (getComputedStyle(view._holdBtnCanvas.parentElement).display !== 'none') {
+          this.drawHoldBtn(view.holdBtnCtx);
+        }
         Particles.draw(ctx, BLOCK);
+      },
+
+      drawHoldBtn(holdBtnCtx) {
+        const holdType = Game.heldPiece;
+        const canvas = view._holdBtnCanvas;
+        const rect = canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio;
+        const W = rect.width;
+        const H = rect.height;
+        if (canvas.width !== Math.floor(W * ratio) || canvas.height !== Math.floor(H * ratio)) {
+          canvas.width = Math.floor(W * ratio);
+          canvas.height = Math.floor(H * ratio);
+          holdBtnCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        }
+        holdBtnCtx.clearRect(0, 0, W, H);
+        if (!holdType) return;
+        const s = SHAPES[holdType];
+        const bs = Math.min(Math.floor(W / 5), Math.floor(H / 5));
+        const trimmed = this._trimBlocks(s.blocks);
+        const tw = trimmed[0].length;
+        const th = trimmed.length;
+        const cx = Math.floor((W - tw * bs) / 2);
+        const cy = Math.floor((H - th * bs) / 2);
+        this.renderBlocks(holdBtnCtx, trimmed, 0, 0, s.id, bs, cx, cy);
       },
 
       clearCanvas(ctx) {
@@ -1738,6 +1890,8 @@
 
       _nextCache: null,
       _nextSize: { w: 0, h: 0 },
+      _holdCache: null,
+      _holdSize: { w: 0, h: 0 },
 
       drawNext(nextCtx) {
         const NEXT_W = view.NEXT_W;
@@ -1756,6 +1910,25 @@
           this.renderBlocks(nextCtx, trimmed, 0, 0, Game.next.color, bs, cx, cy);
         }
       },
+
+      drawHold(holdCtx) {
+        const NEXT_W = view.NEXT_W;
+        const NEXT_H = view.NEXT_H;
+        const holdType = Game.heldPiece;
+        if (this._holdCache === holdType && this._holdSize.w === NEXT_W && this._holdSize.h === NEXT_H) return;
+        this._holdCache = holdType;
+        this._holdSize = { w: NEXT_W, h: NEXT_H };
+        holdCtx.fillStyle = '#16213e';
+        holdCtx.fillRect(0, 0, NEXT_W, NEXT_H);
+        if (holdType) {
+          const s = SHAPES[holdType];
+          const bs = NEXT_W >= 100 ? 22 : 14;
+          const trimmed = this._trimBlocks(s.blocks);
+          const cx = 0;
+          const cy = trimmed.length === 1 ? bs : 0;
+          this.renderBlocks(holdCtx, trimmed, 0, 0, s.id, bs, cx, cy);
+        }
+      },
     };
 
     // --- View ---
@@ -1763,6 +1936,8 @@
     const view = {
       _canvas: null, _ctx: null,
       _nextCanvas: null, _nextCtx: null,
+      _holdCanvas: null, _holdCtx: null,
+      _holdBtnCanvas: null, _holdBtnCtx: null,
       _pauseBtn: null, _settingsBtn: null, _menu: null,
       _ghostToggle: null, _ghostIndicator: null,
       _sevenBagToggle: null, _sevenBagIndicator: null,
@@ -1793,6 +1968,10 @@
         this._ctx = this._canvas.getContext('2d');
         this._nextCanvas = document.getElementById('next-canvas');
         this._nextCtx = this._nextCanvas.getContext('2d');
+        this._holdCanvas = document.getElementById('hold-canvas');
+        this._holdCtx = this._holdCanvas.getContext('2d');
+        this._holdBtnCanvas = document.getElementById('hold-btn-canvas');
+        this._holdBtnCtx = this._holdBtnCanvas.getContext('2d');
         // Layout
         this._gameArea = document.querySelector('.game-area');
         // Controls
@@ -1862,6 +2041,8 @@
 
       get ctx()        { return this._ctx; },
       get nextCtx()    { return this._nextCtx; },
+      get holdCtx()    { return this._holdCtx; },
+      get holdBtnCtx() { return this._holdBtnCtx; },
       get actionBtns() { return this._actionBtns; },
       get langOptions() { return this._langOptions; },
 
@@ -2078,6 +2259,14 @@
         this._nextCanvas.width  = Math.floor(nextRect.width * ratio);
         this._nextCanvas.height = Math.floor(nextRect.height * ratio);
         this._nextCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        const holdRect = this._holdCanvas.getBoundingClientRect();
+        this._holdCanvas.width  = Math.floor(holdRect.width * ratio);
+        this._holdCanvas.height = Math.floor(holdRect.height * ratio);
+        this._holdCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        const holdBtnRect = this._holdBtnCanvas.getBoundingClientRect();
+        this._holdBtnCanvas.width  = Math.floor(holdBtnRect.width * ratio);
+        this._holdBtnCanvas.height = Math.floor(holdBtnRect.height * ratio);
+        this._holdBtnCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
         this.NEXT_W = nextRect.width;
         this.NEXT_H = nextRect.height;
       },
@@ -2246,6 +2435,10 @@
             Game.hardDrop();
             e.preventDefault();
             break;
+          case 'c':
+            Game.hold();
+            e.preventDefault();
+            break;
         }
       },
 
@@ -2340,6 +2533,7 @@
           right:   () => Game.move(1),
           soft:    () => Game.softDrop(),
           hard:    () => Game.hardDrop(),
+          hold:    () => Game.hold(),
           rotate:  () => Game.srsRotate(1),
           pause:   () => {
             if (Game.gameOver) return;
