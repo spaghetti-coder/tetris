@@ -53,19 +53,19 @@
       order: 3;
       display: none;
     }
+    .controls-mobile .left,
+    .controls-mobile .right { transform: translateY(-50%); }
     #hard-drop-btn {
       display: none;
       z-index: 5;
     }
 
     /* --- Shared utilities --- */
-    .icon-btn, .settings-item, .key, .overlay {
+    .icon-btn, .settings-item, .key {
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .icon-btn, .settings-item, .key, .overlay-btn { touch-action: manipulation; }
-    .key, canvas {
+      touch-action: manipulation;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -133,9 +133,6 @@
       border-radius: 6px;
       cursor: pointer;
     }
-    .settings-item:hover,
-    .settings-item:focus-visible,
-    .settings-item:active { background: transparent; }
     .icon-btn i, .key i, .settings-item .icon {
       font-size: 1.125em;
     }
@@ -253,6 +250,8 @@
       border-radius: 4px;
       touch-action: none;
       display: block;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .game-area {
       order: 1;
@@ -349,28 +348,10 @@
       max-height: 240px;
       overflow-y: scroll;
     }
-    #lang-submenu::-webkit-scrollbar,
-    .ranking-list::-webkit-scrollbar,
-    #ranking-submenu::-webkit-scrollbar {
-      width: 4px;
-    }
-    #lang-submenu::-webkit-scrollbar-track,
-    .ranking-list::-webkit-scrollbar-track,
-    #ranking-submenu::-webkit-scrollbar-track {
-      background: transparent;
-      border-radius: 4px;
-    }
-    #lang-submenu::-webkit-scrollbar-thumb,
-    .ranking-list::-webkit-scrollbar-thumb,
-    #ranking-submenu::-webkit-scrollbar-thumb {
-      background: var(--color-border-light);
-      border-radius: 4px;
-    }
-    #lang-submenu::-webkit-scrollbar-thumb:hover,
-    .ranking-list::-webkit-scrollbar-thumb:hover,
-    #ranking-submenu::-webkit-scrollbar-thumb:hover {
-      background: var(--color-muted);
-    }
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: var(--color-border-light); border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-muted); }
     #lang-submenu.open { display: block; }
     .lang-option {
       display: flex;
@@ -456,6 +437,9 @@
       position: absolute;
       inset: 0;
       background: var(--color-overlay);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-direction: column;
       gap: 16px;
       z-index: 3;
@@ -493,6 +477,7 @@
       letter-spacing: 1px;
       min-width: 160px;
       line-height: 1.4;
+      touch-action: manipulation;
     }
     .overlay-btn:active { background: var(--color-accent-dark); }
     .overlay-btn.secondary {
@@ -550,9 +535,9 @@
         height: var(--btn-size);
       }
       .controls-mobile .up    { grid-column: 2; grid-row: 1; }
-      .controls-mobile .left  { grid-column: 1; grid-row: 2; transform: translateY(-50%); }
+      .controls-mobile .left  { grid-column: 1; grid-row: 2; }
       .controls-mobile .down  { grid-column: 2; grid-row: 2; }
-      .controls-mobile .right { grid-column: 3; grid-row: 2; transform: translateY(-50%); }
+      .controls-mobile .right { grid-column: 3; grid-row: 2; }
       .panel { flex: 1; padding: 6px 8px; text-align: center; }
       .panel .value { font-size: 18px; }
       .panel h3 { font-size: 10px; margin-bottom: 2px; letter-spacing: 0.5px; }
@@ -589,8 +574,7 @@
         grid-template-rows: repeat(2, var(--btn-size));
         gap: 4px;
       }
-      .controls-mobile .left  { transform: translateY(-50%); }
-      .controls-mobile .right { transform: translateY(-50%); }
+
       #hard-drop-btn {
         width: var(--btn-size);
         height: var(--btn-size);
@@ -649,7 +633,7 @@
             <i class="fa-solid fa-language icon" aria-hidden="true"></i>
             <span class="label">Language</span>
           </button>
-          <div id="lang-submenu" class="submenu" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
+          <div id="lang-submenu" class="submenu custom-scroll" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
           </div>
         </div>
         <button id="blackwhite-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="blackWhite" data-i18n-attr="aria-label" aria-label="Black & white">
@@ -678,7 +662,7 @@
             <i class="fa-solid fa-trophy icon" aria-hidden="true"></i>
             <span class="label" data-i18n="ranking">Ranking</span>
           </button>
-          <div id="ranking-submenu" class="submenu" role="group" data-i18n="ranking" data-i18n-attr="aria-label" aria-label="Ranking"></div>
+          <div id="ranking-submenu" class="submenu custom-scroll" role="group" data-i18n="ranking" data-i18n-attr="aria-label" aria-label="Ranking"></div>
         </div>
       </div>
       <button id="pause-btn" class="icon-btn" data-action="pause" type="button" data-i18n="pause" data-i18n-attr="aria-label" aria-label="Pause"><i class="fa-solid fa-pause icon-pause" aria-hidden="true"></i><i class="fa-solid fa-play icon-play" aria-hidden="true"></i></button>
@@ -1793,7 +1777,6 @@
 
       _rankingSubmenu: null,
       _rankingToggle: null,
-      _wrapper: null,
       BLOCK: 30, VIEW_W: 0, VIEW_H: 0, NEXT_W: 0, NEXT_H: 0,
       _statsCache: {},
 
@@ -1811,8 +1794,6 @@
         this._nextCanvas = document.getElementById('next-canvas');
         this._nextCtx = this._nextCanvas.getContext('2d');
         // Layout
-
-        this._wrapper = document.querySelector('.wrapper');
         this._gameArea = document.querySelector('.game-area');
         // Controls
         this._pauseBtn = document.getElementById('pause-btn');
@@ -1972,7 +1953,6 @@
           active.blur();
         }
       },
-      focusSettingsBtn()   { this._settingsBtn.focus(); },
       focusGhostToggle()   { this._ghostToggle.focus(); },
       focusLangToggle()      { this._langToggle.focus(); },
 
@@ -2020,7 +2000,7 @@
         sub.innerHTML = '';
         const scores = Scores.all();
         const list = document.createElement('div');
-        list.className = 'ranking-list';
+        list.className = 'ranking-list custom-scroll';
         if (!scores.length) {
           const empty = document.createElement('div');
           empty.className = 'ranking-empty';
@@ -2583,6 +2563,7 @@
         view.setBodyState(Game.paused, Game.gameOver);
         view.setPauseAriaLabel(Game.paused);
         view.setStats();
+        cancelAnimationFrame(this._rafId);
         if (this._lastTime > 0) this.start();
       },
     };
