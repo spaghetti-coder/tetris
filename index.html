@@ -1329,6 +1329,7 @@
         this.clearLines();
         this.current = this.next;
         this.next = this.randomPiece();
+        this.dropCounter = 0;
         // Suppress initial drop tick when soft-drop was held across lock
         if (this.softDropActive) this.suppressSoftDrop = true;
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) this.endGame();
