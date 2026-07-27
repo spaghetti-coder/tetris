@@ -2328,6 +2328,8 @@
         this._holdBtnCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
         this.NEXT_W = nextRect.width;
         this.NEXT_H = nextRect.height;
+        Render._nextCache = null;
+        Render._holdCache = null;
       },
     };
 
