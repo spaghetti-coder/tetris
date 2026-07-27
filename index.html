@@ -1381,6 +1381,10 @@
 
       hold() {
         if (!this.current || this.holdUsed) return;
+        const heldBlocks = this.current.blocks;
+        const heldX = this.current.x;
+        const heldY = this.current.y;
+        const heldColor = this.current.color;
         const currentType = this.current.type;
         this.resetLock();
         this.stopDAS();
@@ -1397,6 +1401,7 @@
         this.holdUsed = true;
         this.invalidateGhost();
         this.dropCounter = 0;
+        HoldTransition.trigger(heldBlocks, heldX, heldY, heldColor);
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) {
           this.endGame();
         }
@@ -1535,6 +1540,7 @@
         this.clearSoftDrop();
         Particles.reset();
         Shake.reset();
+        HoldTransition.reset();
       },
 
       setPaused(v) {
@@ -1680,6 +1686,44 @@
       },
     };
 
+    // --- HoldTransition ---
+
+    const HoldTransition = {
+      fadeOut: { active: false, blocks: null, x: 0, y: 0, color: null, alpha: 1 },
+      fadeIn: { active: false, alpha: 0 },
+      duration: 300,
+      get fadeInAlpha() { return this.fadeIn.active ? this.fadeIn.alpha : 1; },
+
+      trigger(blocks, x, y, color) {
+        this.fadeOut = { active: true, blocks: blocks.map(r => [...r]), x, y, color, alpha: 1 };
+        this.fadeIn = { active: true, alpha: 0 };
+      },
+
+      update(dt) {
+        const speed = dt / this.duration;
+        if (this.fadeOut.active) {
+          this.fadeOut.alpha -= speed;
+          if (this.fadeOut.alpha <= 0) {
+            this.fadeOut.active = false;
+            this.fadeOut.alpha = 1;
+            this.fadeOut.blocks = null;
+          }
+        }
+        if (this.fadeIn.active) {
+          this.fadeIn.alpha += speed;
+          if (this.fadeIn.alpha >= 1) {
+            this.fadeIn.alpha = 1;
+            this.fadeIn.active = false;
+          }
+        }
+      },
+
+      reset() {
+        this.fadeOut = { active: false, blocks: null, x: 0, y: 0, color: null, alpha: 1 };
+        this.fadeIn = { active: false, alpha: 0 };
+      },
+    };
+
     // --- Confirm factory ---
 
     // Two-step confirm guard: request once, confirm or cancel.
@@ -1781,12 +1825,21 @@
         this.drawBoard(ctx, BLOCK);
         this.drawPiece(ctx, BLOCK);
         if (Settings.ghostEnabled && Game.current) this.drawGhost(ctx, BLOCK);
+        if (HoldTransition.fadeOut.active) this.drawFadeOut(ctx, BLOCK);
         this.drawNext(nextCtx);
         this.drawHold(view.holdCtx);
         if (getComputedStyle(view._holdBtnCanvas.parentElement).display !== 'none') {
           this.drawHoldBtn(view.holdBtnCtx);
         }
         Particles.draw(ctx, BLOCK);
+      },
+
+      drawFadeOut(ctx, BLOCK) {
+        const fo = HoldTransition.fadeOut;
+        ctx.save();
+        ctx.globalAlpha = fo.alpha;
+        this.renderBlocks(ctx, fo.blocks, fo.x, fo.y, fo.color, BLOCK);
+        ctx.restore();
       },
 
       drawHoldBtn(holdBtnCtx) {
@@ -1810,7 +1863,10 @@
         const th = trimmed.length;
         const cx = Math.floor((W - tw * bs) / 2);
         const cy = Math.floor((H - th * bs) / 2);
+        holdBtnCtx.save();
+        holdBtnCtx.globalAlpha = HoldTransition.fadeInAlpha;
         this.renderBlocks(holdBtnCtx, trimmed, 0, 0, s.id, bs, cx, cy);
+        holdBtnCtx.restore();
       },
 
       clearCanvas(ctx) {
@@ -1915,7 +1971,7 @@
         const NEXT_W = view.NEXT_W;
         const NEXT_H = view.NEXT_H;
         const holdType = Game.heldPiece;
-        if (this._holdCache === holdType && this._holdSize.w === NEXT_W && this._holdSize.h === NEXT_H) return;
+        if (this._holdCache === holdType && this._holdSize.w === NEXT_W && this._holdSize.h === NEXT_H && !HoldTransition.fadeIn.active) return;
         this._holdCache = holdType;
         this._holdSize = { w: NEXT_W, h: NEXT_H };
         holdCtx.fillStyle = '#16213e';
@@ -1926,7 +1982,10 @@
           const trimmed = this._trimBlocks(s.blocks);
           const cx = 0;
           const cy = trimmed.length === 1 ? bs : 0;
+          holdCtx.save();
+          holdCtx.globalAlpha = HoldTransition.fadeInAlpha;
           this.renderBlocks(holdCtx, trimmed, 0, 0, s.id, bs, cx, cy);
+          holdCtx.restore();
         }
       },
     };
@@ -2688,6 +2747,7 @@
         Game.tick(dt);
         Particles.update(dt);
         Shake.update(dt);
+        HoldTransition.update(dt);
         const o = Shake.offset();
         view.applyShake(o.x, o.y);
 
