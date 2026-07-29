@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "build": "./script/build.sh",
     "lint:js": "sed -n '/<script>/,/<\\/script>/p' index.html | sed '1d;$d' | npx eslint --stdin --stdin-filename=index.js",
     "lint:css": "npx stylelint index.html",
     "syntax": "sed -n '/<script>/,/<\\/script>/p' index.html | sed '1d;$d' | node --check -"
