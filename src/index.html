@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" class="i18n-loading">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" id="fa-primary" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <noscript><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.7.2/css/all.css"></noscript>
+  <title>Tetris</title>
+  <style>
+    /* __app.css__ */
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="side">
+      <div class="panel">
+        <h3 data-i18n="score">Score</h3>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="panel">
+        <h3 data-i18n="level">Level</h3>
+        <div class="value" id="level">1</div>
+      </div>
+      <div class="panel">
+        <h3 data-i18n="lines">Lines</h3>
+        <div class="value" id="lines">0</div>
+      </div>
+      <div class="panel">
+        <h3 data-i18n="next">Next</h3>
+        <canvas id="next-canvas"></canvas>
+      </div>
+      <div class="panel controls">
+        <h3 data-i18n="controls">Controls</h3>
+        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M14 5 L10 5 L10 2 L2 8 L10 14 L10 11 L14 11 Z"/></svg></kbd><kbd><svg viewBox="0 0 16 16"><path d="M2 5 L2 11 L6 11 L6 14 L14 8 L6 2 L6 5 Z"/></svg></kbd></span><span class="desc" data-i18n="move">Move</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>X</kbd><kbd>Z</kbd></span><span class="desc" data-i18n="rotate">Rotate</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd><svg viewBox="0 0 16 16"><path d="M5 4 L11 4 L11 8 L14 8 L8 14 L2 8 L5 8 Z"/></svg></kbd></span><span class="desc" data-i18n="softDrop">Soft Drop</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd class="wide">Space</kbd></span><span class="desc" data-i18n="hardDrop">Hard Drop</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>C</kbd></span><span class="desc" data-i18n="hold">Hold</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>P</kbd></span><span class="desc" data-i18n="pause">Pause</span></div>
+        <div class="ctrl-row"><span class="keys"><kbd>R</kbd></span><span class="desc" data-i18n="restart">Restart</span></div>
+      </div>
+    </div>
+    <div class="side left">
+      <div class="panel">
+        <h3 data-i18n="hold">Hold</h3>
+        <canvas id="hold-canvas"></canvas>
+      </div>
+    </div>
+    <div class="game-wrapper">
+      <div class="game-area">
+        <button id="settings-btn" class="icon-btn" type="button" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings" aria-haspopup="menu" aria-expanded="false">
+          <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+      <div id="settings-menu" role="menu" data-i18n="settings" data-i18n-attr="aria-label" aria-label="Settings">
+        <div class="submenu-wrapper">
+          <button id="lang-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
+            <i class="fa-solid fa-language icon" aria-hidden="true"></i>
+            <span class="label">Language</span>
+          </button>
+          <div id="lang-submenu" class="submenu custom-scroll" role="group" data-i18n="langLabel" data-i18n-attr="aria-label" aria-label="Language">
+          </div>
+        </div>
+        <button id="blackwhite-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="blackWhite" data-i18n-attr="aria-label" aria-label="Black & white">
+          <i class="fa-solid fa-circle-half-stroke icon" aria-hidden="true"></i>
+          <span class="indicator" id="blackwhite-indicator"></span>
+          <span class="label" data-i18n="blackWhite">Black & white</span>
+        </button>
+        <div class="settings-separator"></div>
+        <button id="ghost-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="ghost" data-i18n-attr="aria-label" aria-label="Ghost object">
+          <i class="fa-solid fa-ghost icon" aria-hidden="true"></i>
+          <span class="indicator" id="ghost-indicator"></span>
+          <span class="label" data-i18n="ghost">Ghost object</span>
+        </button>
+        <button id="sevenbag-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="sevenBag" data-i18n-attr="aria-label" aria-label="7-bag">
+          <i class="fa-solid fa-sack-dollar icon" aria-hidden="true"></i>
+          <span class="indicator" id="sevenbag-indicator"></span>
+          <span class="label" data-i18n="sevenBag">7-bag</span>
+        </button>
+        <button id="grid-toggle" class="settings-item" type="button" role="menuitemcheckbox" data-i18n="grid" data-i18n-attr="aria-label" aria-label="Grid">
+          <i class="fa-solid fa-border-all icon" aria-hidden="true"></i>
+          <span class="indicator" id="grid-indicator"></span>
+          <span class="label" data-i18n="grid">Grid</span>
+        </button>
+        <div class="submenu-wrapper">
+          <button id="ranking-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
+            <i class="fa-solid fa-trophy icon" aria-hidden="true"></i>
+            <span class="label" data-i18n="ranking">Ranking</span>
+          </button>
+          <div id="ranking-submenu" class="submenu custom-scroll" role="group" data-i18n="ranking" data-i18n-attr="aria-label" aria-label="Ranking"></div>
+        </div>
+      </div>
+      <button id="pause-btn" class="icon-btn" data-action="pause" type="button" data-i18n="pause" data-i18n-attr="aria-label" aria-label="Pause"><i class="fa-solid fa-pause icon-pause" aria-hidden="true"></i><i class="fa-solid fa-play icon-play" aria-hidden="true"></i></button>
+      <canvas id="board"></canvas>
+      <div class="overlay hidden" id="overlay-pause">
+        <div class="overlay-title" data-i18n="paused">PAUSED</div>
+        <button class="overlay-btn" data-action="resume" type="button" data-i18n="resume">RESUME</button>
+        <button class="overlay-btn secondary" data-action="restart" data-confirm-restart type="button" data-i18n="restart">RESTART</button>
+      </div>
+      <div class="overlay hidden" id="overlay-over">
+        <div class="overlay-title" data-i18n="gameOver">GAME OVER</div>
+        <div class="overlay-score hidden" id="over-msg">
+          <span class="hidden" id="over-msg-soclose" data-i18n="soClose">So Close!</span>
+          <span class="hidden" id="over-msg-youcan" data-i18n="youCanBetter">You can better!</span>
+        </div>
+        <div class="overlay-score hidden" id="over-yourscore"><span data-i18n="yourScore">Your Score:</span> <b id="over-your">0</b></div>
+        <div class="overlay-score hidden" id="over-bestline"><span data-i18n="bestScore">Best Score:</span> <b id="over-bestline-val">0</b></div>
+        <div class="overlay-score hidden" id="over-prevbest"><span data-i18n="previousBest">Previous Best:</span> <b id="over-prev">0</b></div>
+        <button class="overlay-btn" data-action="restart" type="button" data-i18n="playAgain">PLAY AGAIN</button>
+      </div>
+      </div>
+      <button id="hold-btn" class="key" data-action="hold" type="button" data-i18n="hold" data-i18n-attr="aria-label" aria-label="Hold"><span class="hold-label" data-i18n="hold">Hold</span><canvas id="hold-btn-canvas"></canvas></button>
+      <button id="hard-drop-btn" class="key" data-action="hard" type="button" data-i18n="hardDrop" data-i18n-attr="aria-label" aria-label="Hard Drop"><i class="fa-solid fa-angles-down" aria-hidden="true"></i></button>
+    </div>
+    <div class="controls-mobile">
+      <button class="key up" data-action="rotate" type="button"><i class="fa-solid fa-up-long" aria-hidden="true"></i></button>
+      <button class="key left" data-action="left" type="button"><i class="fa-solid fa-left-long" aria-hidden="true"></i></button>
+      <button class="key down" data-action="soft" type="button"><i class="fa-solid fa-down-long" aria-hidden="true"></i></button>
+      <button class="key right" data-action="right" type="button"><i class="fa-solid fa-right-long" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <script>
+    /* __app.js__ */
+  </script>
+</body>
+</html>
