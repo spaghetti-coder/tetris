@@ -1222,8 +1222,7 @@
       return max => {
         const limit = Math.floor(0x100000000 / max) * max;
         let v;
-        do { cryptoSrc.getRandomValues(buf); v = buf[0]; }
-        while (v >= limit);
+        do { cryptoSrc.getRandomValues(buf); v = buf[0]; } while (v >= limit);
         return v % max;
       };
     })();
@@ -1658,19 +1657,17 @@
       },
 
       update(dt) {
-        if (this.timer > 0) {
-          this.timer -= dt;
-          if (this.timer < 0) this.timer = 0;
-        }
         if (this.timer <= 0) {
           this._ox = 0;
           this._oy = 0;
-        } else {
-          const decay = this.timer / this.maxTimer;
-          const mag = this.intensity * decay;
-          this._ox = (Math.random() * 2 - 1) * mag;
-          this._oy = (Math.random() * 2 - 1) * mag;
+          return;
         }
+        this.timer -= dt;
+        if (this.timer < 0) this.timer = 0;
+        const decay = this.timer / this.maxTimer;
+        const mag = this.intensity * decay;
+        this._ox = (Math.random() * 2 - 1) * mag;
+        this._oy = (Math.random() * 2 - 1) * mag;
       },
 
       offset() {
@@ -1976,17 +1973,16 @@
         this._holdSize = { w: NEXT_W, h: NEXT_H };
         holdCtx.fillStyle = '#16213e';
         holdCtx.fillRect(0, 0, NEXT_W, NEXT_H);
-        if (holdType) {
-          const s = SHAPES[holdType];
-          const bs = NEXT_W >= 100 ? 22 : 14;
-          const trimmed = this._trimBlocks(s.blocks);
-          const cx = 0;
-          const cy = trimmed.length === 1 ? bs : 0;
-          holdCtx.save();
-          holdCtx.globalAlpha = HoldTransition.fadeInAlpha;
-          this.renderBlocks(holdCtx, trimmed, 0, 0, s.id, bs, cx, cy);
-          holdCtx.restore();
-        }
+        if (! holdType) return;
+        const s = SHAPES[holdType];
+        const bs = NEXT_W >= 100 ? 22 : 14;
+        const trimmed = this._trimBlocks(s.blocks);
+        const cx = 0;
+        const cy = trimmed.length === 1 ? bs : 0;
+        holdCtx.save();
+        holdCtx.globalAlpha = HoldTransition.fadeInAlpha;
+        this.renderBlocks(holdCtx, trimmed, 0, 0, s.id, bs, cx, cy);
+        holdCtx.restore();
       },
     };
 
@@ -2111,10 +2107,9 @@
       setStats() {
         const stats = { score: Game.score, level: Game.level, lines: Game.lines };
         for (const k in stats) {
-          if (this._statsCache[k] !== stats[k]) {
-            this._statsCache[k] = stats[k];
-            this.setStat(k, stats[k]);
-          }
+          if (this._statsCache[k] === stats[k]) continue;
+          this._statsCache[k] = stats[k];
+          this.setStat(k, stats[k]);
         }
       },
 
