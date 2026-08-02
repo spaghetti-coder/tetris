@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "lint:js": "sed -n '/<script>/,/<\\/script>/p' index.html | sed '1d;$d' | npx eslint --stdin --stdin-filename=index.js",
+    "lint:js": "./scripts/get-js.sh | npx eslint --stdin --stdin-filename=index.js",
     "lint:css": "npx stylelint index.html",
-    "syntax": "sed -n '/<script>/,/<\\/script>/p' index.html | sed '1d;$d' | node --check -"
+    "syntax": "./scripts/get-js.sh | node --check -"
   },
   "repository": {
     "type": "git",
