@@ -55,10 +55,7 @@
     }
     .controls-mobile .left,
     .controls-mobile .right { transform: translateY(-50%); }
-    #hard-drop-btn {
-      display: none;
-      z-index: 5;
-    }
+    #hard-drop-btn,
     #hold-btn {
       display: none;
       z-index: 5;
@@ -577,18 +574,18 @@
         align-items: center;
         gap: 1px;
       }
+      #hold-btn canvas {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        display: block;
+      }
       #hold-btn .hold-label {
         font-size: 8px;
         color: var(--color-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         line-height: 1;
-      }
-      #hold-btn canvas {
-        width: 100%;
-        flex: 1;
-        min-height: 0;
-        display: block;
       }
       .controls-mobile .up    { grid-column: 2; grid-row: 1; }
       .controls-mobile .left  { grid-column: 1; grid-row: 2; }
@@ -640,30 +637,7 @@
         grid-template-rows: repeat(2, var(--btn-size));
         gap: 4px;
       }
-
-      #hard-drop-btn {
-        width: var(--btn-size);
-        height: var(--btn-size);
-        right: 0;
-        left: auto;
-      }
-      #hold-btn {
-        width: var(--btn-size);
-        height: var(--btn-size);
-        left: 0;
-        bottom: 0;
-        padding: 3px 4px 2px;
-        overflow: hidden;
-        flex-direction: column;
-        align-items: center;
-        gap: 1px;
-      }
-      #hold-btn canvas {
-        width: 100%;
-        flex: 1;
-        min-height: 0;
-        display: block;
-      }
+      #hard-drop-btn { left: auto; }
       .panel { padding: 4px 8px; min-width: 90px; }
       .panel h3 { font-size: 10px; }
       .panel .value { font-size: 16px; }
@@ -1325,6 +1299,51 @@
     const BLACKWHITE_STORAGE_KEY = 'tetris.blackwhite.enabled';
     const GRID_STORAGE_KEY = 'tetris.grid.enabled';
 
+    const SETTINGS_CONFIG = [
+      { field: 'ghostEnabled', key: GHOST_STORAGE_KEY, toggleId: 'ghost-toggle', indicatorId: 'ghost-indicator' },
+      { field: 'sevenBagEnabled', key: SEVENBAG_STORAGE_KEY, toggleId: 'sevenbag-toggle', indicatorId: 'sevenbag-indicator' },
+      { field: 'blackWhiteEnabled', key: BLACKWHITE_STORAGE_KEY, toggleId: 'blackwhite-toggle', indicatorId: 'blackwhite-indicator' },
+      { field: 'gridEnabled', key: GRID_STORAGE_KEY, toggleId: 'grid-toggle', indicatorId: 'grid-indicator' },
+    ];
+
+    // --- PieceGenerator ---
+
+    const PieceGenerator = {
+      _bag: [],
+      _sevenBag: true,
+
+      set sevenBag(v) { this._sevenBag = v; this._bag = []; },
+
+      _shuffle() {
+        this._bag = [...PIECE_NAMES];
+        for (let i = this._bag.length - 1; i > 0; i--) {
+          const j = randInt(i + 1);
+          [this._bag[i], this._bag[j]] = [this._bag[j], this._bag[i]];
+        }
+      },
+
+      next(typeName) {
+        let name = PIECE_NAMES[randInt(PIECE_NAMES.length)];
+        if (typeName) {
+          name = typeName;
+        } else if (this._sevenBag) {
+          if (!this._bag.length) this._shuffle();
+          name = this._bag.pop();
+        }
+        const s = SHAPES[name];
+        return {
+          type: name,
+          blocks: s.blocks.map(r => [...r]),
+          color: s.id,
+          x: Math.floor((COLS - s.blocks[0].length) / 2),
+          y: 0,
+          state: 0
+        };
+      },
+
+      reset() { this._bag = []; },
+    };
+
     // --- Game ---
 
     const randInt = (() => {
@@ -1359,68 +1378,17 @@
       dropCounter: 0, dropInterval: 1000,
       softDropActive: false, suppressSoftDrop: false,
       lockTimer: null, dasTimer: null, arrTimer: null, dasDir: 0,
-      bag: [],
       _ghostY: 0,
       _ghostDirty: true,
 
-      // -- Status --
-
-      isRunning()  { return !this.paused && !this.gameOver; },
-      isPlayable() { return this.isRunning() && this.current; },
-
-      // -- Soft drop --
-
-      clearSoftDrop() {
-        this.softDropActive = false;
-        this.suppressSoftDrop = false;
-      },
-
-      // -- Piece generation --
-
-      fillBag() {
-        this.bag = [...PIECE_NAMES];
-        for (let i = this.bag.length - 1; i > 0; i--) {
-          const j = randInt(i + 1);
-          [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
-        }
-      },
-
-      randomPiece(typeName) {
-        let name = PIECE_NAMES[randInt(PIECE_NAMES.length)];
-        if (typeName) {
-          name = typeName;
-        } else if (Settings.sevenBagEnabled) {
-          if (!this.bag.length) this.fillBag();
-          name = this.bag.pop();
-        }
-        const s = SHAPES[name];
-        return {
-          type: name,
-          blocks: s.blocks.map(r => [...r]),
-          color: s.id,
-          x: Math.floor((COLS - s.blocks[0].length) / 2),
-          y: 0,
-          state: 0
-        };
-      },
-
       // -- Rotation --
 
-      rotateCW(blocks) {
+      rotate(blocks, cw) {
         const N = blocks.length;
         const r = Array.from({ length: N }, () => Array(N).fill(0));
         for (let y = 0; y < N; y++)
           for (let x = 0; x < N; x++)
-            r[x][N - 1 - y] = blocks[y][x];
-        return r;
-      },
-
-      rotateCCW(blocks) {
-        const N = blocks.length;
-        const r = Array.from({ length: N }, () => Array(N).fill(0));
-        for (let y = 0; y < N; y++)
-          for (let x = 0; x < N; x++)
-            r[N - 1 - x][y] = blocks[y][x];
+            cw ? r[x][N - 1 - y] = blocks[y][x] : r[N - 1 - x][y] = blocks[y][x];
         return r;
       },
 
@@ -1428,13 +1396,10 @@
         const p = this.current;
         if (!p || p.type === 'O') return;
         this.resetLock();
+        const cw = direction === 1;
         const from = p.state;
-        const to = direction === 1
-          ? (from + 1) % 4
-          : (from + 3) % 4;
-        const rotated = direction === 1
-          ? this.rotateCW(p.blocks)
-          : this.rotateCCW(p.blocks);
+        const to = cw ? (from + 1) % 4 : (from + 3) % 4;
+        const rotated = this.rotate(p.blocks, cw);
         const kicks = getSRSKicks(p.type, from, to);
         for (const [dx, dy] of kicks) {
           if (this.collidesAt(rotated, p.x + dx, p.y + dy)) continue;
@@ -1488,7 +1453,7 @@
         }
         this.invalidateGhost();
         this.resetLock();
-        vibrate(15);
+        Fx.onHardDrop();
         this.lock();
       },
 
@@ -1501,20 +1466,21 @@
         const currentType = this.current.type;
         this.resetLock();
         this.stopDAS();
-        this.clearSoftDrop();
+        this.softDropActive = false;
+        this.suppressSoftDrop = false;
         if (this.heldPiece === null) {
           this.heldPiece = currentType;
           this.current = this.next;
-          this.next = this.randomPiece();
+          this.next = PieceGenerator.next();
         } else {
           const swapType = this.heldPiece;
           this.heldPiece = currentType;
-          this.current = this.randomPiece(swapType);
+          this.current = PieceGenerator.next(swapType);
         }
         this.holdUsed = true;
         this.invalidateGhost();
         this.dropCounter = 0;
-        HoldTransition.trigger(heldBlocks, heldX, heldY, heldColor);
+        Fx.onHold(heldBlocks, heldX, heldY, heldColor);
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) {
           this.endGame();
         }
@@ -1536,8 +1502,8 @@
         if (this.lockTimer || !this.current) return;
         if (this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
           this.lockTimer = setTimeout(() => {
-            this.lockTimer = null;
-            if (this.isPlayable()) this.lock();
+             this.lockTimer = null;
+             if (!this.paused && !this.gameOver && this.current) this.lock();
           }, LOCK_DELAY);
         }
       },
@@ -1558,7 +1524,7 @@
         this.clearLines();
         this.holdUsed = false;
         this.current = this.next;
-        this.next = this.randomPiece();
+        this.next = PieceGenerator.next();
         this.dropCounter = 0;
         this.invalidateGhost();
         // Suppress initial drop tick when soft-drop was held across lock
@@ -1580,15 +1546,14 @@
             y++;
           }
         }
-        if (cleared > 0) {
-          Particles.burst(clearedRowData, cleared);
-          if (cleared === 4) Shake.trigger();
-          this.score += LINE_SCORES[cleared] * this.level;
-          this.lines += cleared;
-          this.level = Math.floor(this.lines / 10) + 1;
-          this.dropInterval = Math.max(50, 1000 - (this.level - 1) * 80);
-          vibrate(cleared * 15);
-        }
+
+        if (cleared < 1) return;
+        Fx.onLinesCleared(clearedRowData, cleared);
+        this.score += LINE_SCORES[cleared] * this.level;
+        this.lines += cleared;
+        this.level = Math.floor(this.lines / 10) + 1;
+        this.dropInterval = Math.max(50, 1000 - (this.level - 1) * 80);
+        vibrate(cleared * 15);
       },
 
       // -- Game flow --
@@ -1619,8 +1584,8 @@
         this.dasDir = dir;
         this.move(dir);
         this.dasTimer = setTimeout(() => {
-          this.arrTimer = setInterval(() => {
-            if (this.isPlayable()) this.move(dir);
+           this.arrTimer = setInterval(() => {
+             if (!this.paused && !this.gameOver && this.current) this.move(dir);
           }, ARR_RATE);
         }, DAS_DELAY);
       },
@@ -1643,29 +1608,23 @@
         this.paused = false; this.gameOver = false;
         this.dropInterval = 1000;
         this.dropCounter = 0;
-        this.bag = [];
+        PieceGenerator.reset();
         this.heldPiece = null;
         this.holdUsed = false;
         this._ghostY = 0;
         this._ghostDirty = true;
-        this.current = this.randomPiece();
-        this.next = this.randomPiece();
-        this.clearSoftDrop();
-        Particles.reset();
-        Shake.reset();
-        HoldTransition.reset();
-      },
-
-      setPaused(v) {
-        this.paused = v;
+        this.current = PieceGenerator.next();
+        this.next = PieceGenerator.next();
+        this.softDropActive = false;
+        this.suppressSoftDrop = false;
+        Fx.reset();
       },
 
       tick(dt) {
-        if (this.isRunning()) {
-          if (this.suppressSoftDrop) this.suppressSoftDrop = false;
-          this.dropCounter += dt;
-          if (this.dropCounter > this.dropInterval) this.drop();
-        }
+        if (this.paused || this.gameOver) return;
+        this.dropCounter += dt;
+        if (this.suppressSoftDrop) this.suppressSoftDrop = false;
+        if (this.dropCounter > this.dropInterval) this.drop();
       },
     };
 
@@ -1784,10 +1743,6 @@
         this._oy = (Math.random() * 2 - 1) * mag;
       },
 
-      offset() {
-        return { x: this._ox, y: this._oy };
-      },
-
       reset() {
         this.intensity = 0;
         this.timer = 0;
@@ -1803,7 +1758,6 @@
       fadeOut: { active: false, blocks: null, x: 0, y: 0, color: null, alpha: 1 },
       fadeIn: { active: false, alpha: 0 },
       duration: 300,
-      get fadeInAlpha() { return this.fadeIn.active ? this.fadeIn.alpha : 1; },
 
       trigger(blocks, x, y, color) {
         this.fadeOut = { active: true, blocks: blocks.map(r => [...r]), x, y, color, alpha: 1 };
@@ -1820,13 +1774,11 @@
             this.fadeOut.blocks = null;
           }
         }
-        if (this.fadeIn.active) {
-          this.fadeIn.alpha += speed;
-          if (this.fadeIn.alpha >= 1) {
-            this.fadeIn.alpha = 1;
-            this.fadeIn.active = false;
-          }
-        }
+        if (! this.fadeIn.active) return;
+        this.fadeIn.alpha += speed;
+        if (this.fadeIn.alpha < 1) return;
+        this.fadeIn.alpha = 1;
+        this.fadeIn.active = false;
       },
 
       reset() {
@@ -1835,58 +1787,62 @@
       },
     };
 
-    // --- Confirm factory ---
+    // --- Fx ---
 
-    // Two-step confirm guard: request once, confirm or cancel.
-    function createTwoStepConfirm({ confirmKey, applyVisual, revertVisual, onConfirm }) {
-      let btn = null;
-      let className = '';
+    const Fx = {
+      onLinesCleared(clearedRowData, cleared) {
+        Particles.burst(clearedRowData, cleared);
+        if (cleared === 4) Shake.trigger();
+      },
 
-      return {
-        isPending(candidate) { return btn === candidate; },
+      onHardDrop() { vibrate(15); },
 
-        request(candidate) {
-          this.cancel();
-          btn = candidate;
-          className = candidate.className;
-          candidate.textContent = I18N.t(confirmKey);
-          if (applyVisual) applyVisual(candidate);
-          Shake.trigger(16);
-        },
+      onHold(blocks, x, y, color) { HoldTransition.trigger(blocks, x, y, color); },
 
-        confirm() {
-          this.cancel();
-          onConfirm();
-        },
+      reset() {
+        Particles.reset();
+        Shake.reset();
+        HoldTransition.reset();
+      },
+    };
 
-        cancel() {
-          if (!btn) return;
-          const key = btn.dataset.i18n;
-          if (key) btn.textContent = I18N.t(key);
-          if (revertVisual) revertVisual(btn, className);
-          else btn.className = className;
-          btn = null;
-          className = '';
-        },
-      };
-    }
+    // --- Confirm guards ---
 
-    const RestartConfirm = createTwoStepConfirm({
-      confirmKey: 'confirmRestart',
-      applyVisual: (btn) => btn.classList.remove('secondary'),
-      onConfirm: () => Lifecycle.resetGame(),
-    });
-
-    const ClearConfirm = createTwoStepConfirm({
-      confirmKey: 'confirmClear',
-      applyVisual: (btn) => btn.classList.add('confirming'),
-      revertVisual: (btn) => btn.classList.remove('confirming'),
-      onConfirm: () => {
-        Scores.clear();
-        view.renderRanking();
-        Lifecycle.rerenderGameOver();
+    const createConfirm = (i18nKey, onConfirm, onApply, onRevert) => ({
+      _btn: null,
+      _meta: null,
+      isPending(c) { return this._btn === c; },
+      request(c) {
+        this.cancel();
+        this._btn = c;
+        c.textContent = I18N.t(i18nKey);
+        this._meta = onApply(c);
+        Shake.trigger(16);
+      },
+      confirm() { this.cancel(); onConfirm(); },
+      cancel() {
+        if (!this._btn) return;
+        const key = this._btn.dataset.i18n;
+        if (key) this._btn.textContent = I18N.t(key);
+        onRevert(this._btn, this._meta);
+        this._btn = null;
+        this._meta = null;
       },
     });
+
+    const RestartConfirm = createConfirm(
+      'confirmRestart',
+      () => Lifecycle.resetGame(),
+      (btn) => { const c = btn.className; btn.classList.remove('secondary'); return c; },
+      (btn, c) => { btn.className = c; }
+    );
+
+    const ClearConfirm = createConfirm(
+      'confirmClear',
+      () => { Scores.clear(); view.renderRanking(); Lifecycle.rerenderGameOver(); },
+      (btn) => btn.classList.add('confirming'),
+      (btn) => btn.classList.remove('confirming')
+    );
 
     // --- Rendering ---
 
@@ -1927,35 +1883,31 @@
 
       // -- Pipeline --
 
-      draw() {
-        const ctx = view.ctx;
-        const nextCtx = view.nextCtx;
-        const BLOCK = view.BLOCK;
-        this.clearCanvas(ctx);
+      draw(rctx) {
+        const { ctx, nextCtx, holdCtx, holdBtnCtx, holdBtnCanvas, BLOCK, VIEW_W, VIEW_H, NEXT_W, NEXT_H } = rctx;
+        ctx.fillStyle = '#0f0f23';
+        ctx.fillRect(-4, -4, VIEW_W + 8, VIEW_H + 8);
         if (Settings.gridEnabled) this.drawGrid(ctx, BLOCK);
-        this.drawBoard(ctx, BLOCK);
-        this.drawPiece(ctx, BLOCK);
+        this.renderBlocks(ctx, Game.grid, 0, 0, (x, y) => Game.grid[y][x], BLOCK);
+        if (Game.current) this.renderBlocks(ctx, Game.current.blocks, Game.current.x, Game.current.y, Game.current.color, BLOCK);
         if (Settings.ghostEnabled && Game.current) this.drawGhost(ctx, BLOCK);
-        if (HoldTransition.fadeOut.active) this.drawFadeOut(ctx, BLOCK);
-        this.drawNext(nextCtx);
-        this.drawHold(view.holdCtx);
-        if (getComputedStyle(view._holdBtnCanvas.parentElement).display !== 'none') {
-          this.drawHoldBtn(view.holdBtnCtx);
+        if (HoldTransition.fadeOut.active) {
+          const fo = HoldTransition.fadeOut;
+          ctx.save();
+          ctx.globalAlpha = fo.alpha;
+          this.renderBlocks(ctx, fo.blocks, fo.x, fo.y, fo.color, BLOCK);
+          ctx.restore();
+        }
+        this.drawNext(nextCtx, NEXT_W, NEXT_H);
+        this.drawHold(holdCtx, NEXT_W, NEXT_H);
+        if (getComputedStyle(holdBtnCanvas.parentElement).display !== 'none') {
+          this.drawHoldBtn(holdBtnCtx, holdBtnCanvas);
         }
         Particles.draw(ctx, BLOCK);
       },
 
-      drawFadeOut(ctx, BLOCK) {
-        const fo = HoldTransition.fadeOut;
-        ctx.save();
-        ctx.globalAlpha = fo.alpha;
-        this.renderBlocks(ctx, fo.blocks, fo.x, fo.y, fo.color, BLOCK);
-        ctx.restore();
-      },
-
-      drawHoldBtn(holdBtnCtx) {
+      drawHoldBtn(holdBtnCtx, canvas) {
         const holdType = Game.heldPiece;
-        const canvas = view._holdBtnCanvas;
         const rect = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio;
         const W = rect.width;
@@ -1975,17 +1927,10 @@
         const cx = Math.floor((W - tw * bs) / 2);
         const cy = Math.floor((H - th * bs) / 2);
         holdBtnCtx.save();
-        holdBtnCtx.globalAlpha = HoldTransition.fadeInAlpha;
+        holdBtnCtx.globalAlpha = HoldTransition.fadeIn.active ? HoldTransition.fadeIn.alpha : 1;
         this.renderBlocks(holdBtnCtx, trimmed, 0, 0, s.id, bs, cx, cy);
         holdBtnCtx.restore();
-      },
-
-      clearCanvas(ctx) {
-        const VIEW_W = view.VIEW_W;
-        const VIEW_H = view.VIEW_H;
-        ctx.fillStyle = '#0f0f23';
-        ctx.fillRect(-4, -4, VIEW_W + 8, VIEW_H + 8);
-      },
+       },
 
       drawGrid(ctx, BLOCK) {
         ctx.save();
@@ -2004,24 +1949,11 @@
         ctx.restore();
       },
 
-      drawBoard(ctx, BLOCK) {
-        this.renderBlocks(ctx, Game.grid, 0, 0, (x, y) => Game.grid[y][x], BLOCK);
-      },
-
-      drawPiece(ctx, BLOCK) {
-        if (!Game.current) return;
-        this.renderBlocks(ctx, Game.current.blocks, Game.current.x, Game.current.y, Game.current.color, BLOCK);
-      },
-
       drawGhost(ctx, BLOCK) {
         const ghostY = Game.computeGhostY();
         ctx.globalAlpha = 0.1;
         this.renderBlocks(ctx, Game.current.blocks, Game.current.x, ghostY, Game.current.color, BLOCK);
         ctx.globalAlpha = 1;
-        this.drawGhostOutline(ctx, ghostY, BLOCK);
-      },
-
-      drawGhostOutline(ctx, ghostY, BLOCK) {
         ctx.save();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
         ctx.lineWidth = Math.max(1.2, BLOCK / 16);
@@ -2073,9 +2005,7 @@
         if (alpha !== undefined) ctx.restore();
       },
 
-      drawNext(nextCtx) {
-        const NEXT_W = view.NEXT_W;
-        const NEXT_H = view.NEXT_H;
+      drawNext(nextCtx, NEXT_W, NEXT_H) {
         const nextType = Game.next?.type;
         if (this._nextCache === nextType && this._nextSize.w === NEXT_W && this._nextSize.h === NEXT_H) return;
         this._nextCache = nextType;
@@ -2083,19 +2013,26 @@
         this._drawPreview(nextCtx, NEXT_W, NEXT_H, Game.next?.blocks, Game.next?.color);
       },
 
-      drawHold(holdCtx) {
-        const NEXT_W = view.NEXT_W;
-        const NEXT_H = view.NEXT_H;
+      drawHold(holdCtx, NEXT_W, NEXT_H) {
         const holdType = Game.heldPiece;
         if (this._holdCache === holdType && this._holdSize.w === NEXT_W && this._holdSize.h === NEXT_H && !HoldTransition.fadeIn.active) return;
         this._holdCache = holdType;
         this._holdSize = { w: NEXT_W, h: NEXT_H };
         const s = SHAPES[holdType];
-        this._drawPreview(holdCtx, NEXT_W, NEXT_H, s?.blocks, s?.id, HoldTransition.fadeInAlpha);
+        this._drawPreview(holdCtx, NEXT_W, NEXT_H, s?.blocks, s?.id, HoldTransition.fadeIn.active ? HoldTransition.fadeIn.alpha : 1);
       },
     };
 
     // --- View ---
+
+    const setupCanvas = (canvas, ctx) => {
+      const ratio = window.devicePixelRatio;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * ratio);
+      canvas.height = Math.floor(rect.height * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return rect;
+    };
 
     const view = {
       _canvas: null, _ctx: null,
@@ -2128,14 +2065,11 @@
 
       initRefs() {
         // Canvases
-        this._canvas = document.getElementById('board');
-        this._ctx = this._canvas.getContext('2d');
-        this._nextCanvas = document.getElementById('next-canvas');
-        this._nextCtx = this._nextCanvas.getContext('2d');
-        this._holdCanvas = document.getElementById('hold-canvas');
-        this._holdCtx = this._holdCanvas.getContext('2d');
-        this._holdBtnCanvas = document.getElementById('hold-btn-canvas');
-        this._holdBtnCtx = this._holdBtnCanvas.getContext('2d');
+        const _initCanvas = (id, cP, xP) => { this[cP] = document.getElementById(id); this[xP] = this[cP].getContext('2d'); };
+        _initCanvas('board', '_canvas', '_ctx');
+        _initCanvas('next-canvas', '_nextCanvas', '_nextCtx');
+        _initCanvas('hold-canvas', '_holdCanvas', '_holdCtx');
+        _initCanvas('hold-btn-canvas', '_holdBtnCanvas', '_holdBtnCtx');
         // Layout
         this._gameArea = document.querySelector('.game-area');
         // Controls
@@ -2144,14 +2078,11 @@
         this._menu = document.getElementById('settings-menu');
         this._actionBtns = document.querySelectorAll('[data-action]');
         // Settings toggles
-        this._ghostToggle = document.getElementById('ghost-toggle');
-        this._ghostIndicator = document.getElementById('ghost-indicator');
-        this._sevenBagToggle = document.getElementById('sevenbag-toggle');
-        this._sevenBagIndicator = document.getElementById('sevenbag-indicator');
-        this._blackWhiteToggle = document.getElementById('blackwhite-toggle');
-        this._blackWhiteIndicator = document.getElementById('blackwhite-indicator');
-        this._gridToggle = document.getElementById('grid-toggle');
-        this._gridIndicator = document.getElementById('grid-indicator');
+        SETTINGS_CONFIG.forEach(cfg => {
+          const base = cfg.field.replace(/Enabled$/, '');
+          this[`_${base}Toggle`] = document.getElementById(cfg.toggleId);
+          this[`_${base}Indicator`] = document.getElementById(cfg.indicatorId);
+        });
         // Language
         this._langToggle = document.getElementById('lang-toggle');
         this._langSubmenu = document.getElementById('lang-submenu');
@@ -2201,24 +2132,14 @@
         this._langOptions = this._langSubmenu.querySelectorAll('.lang-option');
       },
 
-      // -- Getters --
-
-      get ctx()        { return this._ctx; },
-      get nextCtx()    { return this._nextCtx; },
-      get holdCtx()    { return this._holdCtx; },
-      get holdBtnCtx() { return this._holdBtnCtx; },
-      get actionBtns() { return this._actionBtns; },
-      get langOptions() { return this._langOptions; },
-
       // -- Stats --
 
-      setStat(k, v)    { this._stats[k].textContent = v; },
       setStats() {
         const stats = { score: Game.score, level: Game.level, lines: Game.lines };
         for (const k in stats) {
           if (this._statsCache[k] === stats[k]) continue;
           this._statsCache[k] = stats[k];
-          this.setStat(k, stats[k]);
+          this._stats[k].textContent = stats[k];
         }
       },
 
@@ -2234,14 +2155,19 @@
         this._gameArea.style.transform = (x || y) ? `translate(${x}px, ${y}px)` : '';
       },
 
-      // -- Overlays --
-
-      showOverlay(name) {
-        this._overlayPause.classList.add('hidden');
-        this._overlayOver.classList.add('hidden');
-        if (name === 'pause') this._overlayPause.classList.remove('hidden');
-        else if (name === 'over') this._overlayOver.classList.remove('hidden');
+      applyBodyClasses() {
+        document.body.classList.toggle('paused', Game.paused);
+        document.body.classList.toggle('game-over', Game.gameOver);
       },
+      updatePauseLabel() {
+        this._pauseBtn.setAttribute('aria-label', I18N.t(Game.paused ? 'resumeLabel' : 'pause'));
+      },
+      applyOverlays() {
+        this._overlayPause.classList.toggle('hidden', !Game.paused || Game.gameOver);
+        this._overlayOver.classList.toggle('hidden', !Game.gameOver);
+      },
+
+      // -- Overlays --
 
       renderGameOver(state, score, prevBest) {
         const hide = el => el.classList.add('hidden');
@@ -2268,18 +2194,8 @@
         }
       },
 
-      // -- Pause button --
-
-      setPauseBtnVisible(v) { this._pauseBtn.classList.toggle('hidden', !v); },
-      setPauseAriaLabel(paused) { this._pauseBtn.setAttribute('aria-label', I18N.t(paused ? 'resumeLabel' : 'pause')); },
-
       // -- Settings menu --
 
-      setSettingsMenuOpen(open) {
-        this._menu.classList.toggle('open', open);
-        this._settingsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      },
-      isSettingsMenuOpen() { return this._menu.classList.contains('open'); },
       closeAllSubmenus() {
         this.closeLangSubmenu();
         this.closeRankingSubmenu();
@@ -2287,8 +2203,9 @@
 
       closeSettingsMenu() {
         this.closeAllSubmenus();
-        if (!this.isSettingsMenuOpen()) return;
-        this.setSettingsMenuOpen(false);
+        if (!this._menu.classList.contains('open')) return;
+        this._menu.classList.remove('open');
+        this._settingsBtn.setAttribute('aria-expanded', 'false');
         this.blurMenuFocus();
       },
       blurMenuFocus() {
@@ -2297,21 +2214,19 @@
           active.blur();
         }
       },
-      focusGhostToggle()   { this._ghostToggle.focus(); },
-      focusLangToggle()      { this._langToggle.focus(); },
+      focusGhostToggle()  { this._ghostToggle.focus(); },
+      focusLangToggle()   { this._langToggle.focus(); },
 
       // -- Language submenu --
 
-      setLangSubmenuOpen(open) {
-        this._langSubmenu.classList.toggle('open', open);
-        this._langToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      _closeSubmenu(submenuEl, toggleEl, focusFn, preHook) {
+        if (!submenuEl.classList.contains('open')) return;
+        if (preHook) preHook();
+        submenuEl.classList.remove('open');
+        toggleEl.setAttribute('aria-expanded', 'false');
+        focusFn();
       },
-      isLangSubmenuOpen() { return this._langSubmenu.classList.contains('open'); },
-      closeLangSubmenu() {
-        if (!this.isLangSubmenuOpen()) return;
-        this.setLangSubmenuOpen(false);
-        this.focusLangToggle();
-      },
+      closeLangSubmenu() { this._closeSubmenu(this._langSubmenu, this._langToggle, () => this.focusLangToggle()); },
       setActiveLangOption(lang) {
         this._langOptions.forEach(btn => {
           const active = btn.dataset.lang === lang;
@@ -2327,17 +2242,7 @@
 
       // -- Ranking submenu --
 
-      setRankingSubmenuOpen(open) {
-        this._rankingSubmenu.classList.toggle('open', open);
-        this._rankingToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      },
-      isRankingSubmenuOpen() { return this._rankingSubmenu.classList.contains('open'); },
-      closeRankingSubmenu() {
-        if (!this.isRankingSubmenuOpen()) return;
-        ClearConfirm.cancel();
-        this.setRankingSubmenuOpen(false);
-        this._rankingToggle.focus();
-      },
+      closeRankingSubmenu() { this._closeSubmenu(this._rankingSubmenu, this._rankingToggle, () => this._rankingToggle.focus(), () => ClearConfirm.cancel()); },
 
       renderRanking() {
         const sub = this._rankingSubmenu;
@@ -2388,18 +2293,6 @@
         toggleEl.setAttribute('aria-checked', on ? 'true' : 'false');
       },
 
-      setGhostIndicator(on)    { this._setIndicator(this._ghostIndicator,   this._ghostToggle,   on); },
-      setSevenBagIndicator(on) { this._setIndicator(this._sevenBagIndicator, this._sevenBagToggle, on); },
-      setBlackWhiteIndicator(on) { this._setIndicator(this._blackWhiteIndicator, this._blackWhiteToggle, on); },
-      setGridIndicator(on) { this._setIndicator(this._gridIndicator, this._gridToggle, on); },
-
-      // -- Body state --
-
-      setBodyState(paused, gameOver) {
-        document.body.classList.toggle('paused', paused);
-        document.body.classList.toggle('game-over', gameOver);
-      },
-
       // -- Resize --
 
       resize() {
@@ -2418,18 +2311,9 @@
         this._canvas.width  = Math.floor(finalRect.width * ratio);
         this._canvas.height = Math.floor(finalRect.height * ratio);
         this._ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        const nextRect = this._nextCanvas.getBoundingClientRect();
-        this._nextCanvas.width  = Math.floor(nextRect.width * ratio);
-        this._nextCanvas.height = Math.floor(nextRect.height * ratio);
-        this._nextCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        const holdRect = this._holdCanvas.getBoundingClientRect();
-        this._holdCanvas.width  = Math.floor(holdRect.width * ratio);
-        this._holdCanvas.height = Math.floor(holdRect.height * ratio);
-        this._holdCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        const holdBtnRect = this._holdBtnCanvas.getBoundingClientRect();
-        this._holdBtnCanvas.width  = Math.floor(holdBtnRect.width * ratio);
-        this._holdBtnCanvas.height = Math.floor(holdBtnRect.height * ratio);
-        this._holdBtnCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        const nextRect = setupCanvas(this._nextCanvas, this._nextCtx);
+        setupCanvas(this._holdCanvas, this._holdCtx);
+        setupCanvas(this._holdBtnCanvas, this._holdBtnCtx);
         this.NEXT_W = nextRect.width;
         this.NEXT_H = nextRect.height;
         Render._nextCache = null;
@@ -2459,21 +2343,9 @@
       },
 
       init() {
-        this.ghostEnabled = this._load(GHOST_STORAGE_KEY, this.ghostEnabled);
-        this.sevenBagEnabled = this._load(SEVENBAG_STORAGE_KEY, this.sevenBagEnabled);
-        this.blackWhiteEnabled = this._load(BLACKWHITE_STORAGE_KEY, this.blackWhiteEnabled);
-        this.gridEnabled = this._load(GRID_STORAGE_KEY, this.gridEnabled);
+        SETTINGS_CONFIG.forEach(cfg => { this[cfg.field] = this._load(cfg.key, this[cfg.field]); });
       },
 
-      _toggle(field, storageKey) {
-        this[field] = !this[field];
-        this._save(storageKey, this[field]);
-      },
-
-      toggleGhost()    { this._toggle('ghostEnabled',    GHOST_STORAGE_KEY); },
-      toggleSevenBag() { this._toggle('sevenBagEnabled', SEVENBAG_STORAGE_KEY); },
-      toggleBlackWhite() { this._toggle('blackWhiteEnabled', BLACKWHITE_STORAGE_KEY); },
-      toggleGrid() { this._toggle('gridEnabled', GRID_STORAGE_KEY); },
     };
 
     // --- Scores ---
@@ -2540,15 +2412,15 @@
         document.addEventListener('click', e => {
           this._closeSubmenuOnOutsideClick(
             e, view._rankingSubmenu, view._rankingToggle,
-            view.isRankingSubmenuOpen.bind(view),
+            () => view._rankingSubmenu.classList.contains('open'),
             view.closeRankingSubmenu.bind(view)
           );
           this._closeSubmenuOnOutsideClick(
             e, view._langSubmenu, view._langToggle,
-            view.isLangSubmenuOpen.bind(view),
+            () => view._langSubmenu.classList.contains('open'),
             view.closeLangSubmenu.bind(view)
           );
-          if (view.isSettingsMenuOpen() &&
+          if (view._menu.classList.contains('open') &&
               !view._menu.contains(e.target) &&
               !view._settingsBtn.contains(e.target)) {
             view.closeSettingsMenu();
@@ -2572,8 +2444,8 @@
 
       _handleMenuKey(key) {
         if (key !== 'escape') return;
-        if (view.isRankingSubmenuOpen()) view.closeRankingSubmenu();
-        else if (view.isLangSubmenuOpen()) view.closeLangSubmenu();
+        if (view._rankingSubmenu.classList.contains('open')) view.closeRankingSubmenu();
+        else if (view._langSubmenu.classList.contains('open')) view.closeLangSubmenu();
         else view.closeSettingsMenu();
       },
 
@@ -2610,7 +2482,7 @@
       _bindKeyboard() {
         document.addEventListener('keydown', e => {
           const key = e.key.toLowerCase();
-          const menuOpen = view.isSettingsMenuOpen();
+          const menuOpen = view._menu.classList.contains('open');
 
           if (Game.gameOver) {
             this._handleGameOverKey(key, menuOpen);
@@ -2636,7 +2508,8 @@
 
         document.addEventListener('keyup', e => {
           if (e.key === 'ArrowDown') {
-            Game.clearSoftDrop();
+            Game.softDropActive = false;
+            Game.suppressSoftDrop = false;
           } else if (e.key === 'ArrowLeft' && Game.dasDir === -1) {
             Game.stopDAS();
           } else if (e.key === 'ArrowRight' && Game.dasDir === 1) {
@@ -2662,7 +2535,7 @@
           }
           t1 = setTimeout(() => {
             t2 = setInterval(() => {
-              if (!Game.isRunning()) return;
+              if (Game.paused || Game.gameOver) return;
               if (isSoft && Game.suppressSoftDrop) return;
               action();
             }, ARR_RATE);
@@ -2671,7 +2544,7 @@
         const end = () => {
           if (t1) { clearTimeout(t1); t1 = null; }
           if (t2) { clearInterval(t2); t2 = null; }
-          if (isSoft) Game.clearSoftDrop();
+          if (isSoft) { Game.softDropActive = false; Game.suppressSoftDrop = false; }
           pid = null;
         };
         button.addEventListener('pointerdown', start);
@@ -2702,7 +2575,7 @@
           rotate:  () => Game.srsRotate(1),
           pause:   () => {
             if (Game.gameOver) return;
-            if (view.isSettingsMenuOpen()) {
+            if (view._menu.classList.contains('open')) {
               view.closeSettingsMenu();
               if (Game.paused) Lifecycle.setPaused(false);
               return;
@@ -2726,7 +2599,7 @@
           }
         };
 
-        view.actionBtns.forEach(btn => {
+        view._actionBtns.forEach(btn => {
           const a = btn.dataset.action;
           const fn = ACTIONS[a];
           if (!fn) return;
@@ -2746,51 +2619,49 @@
 
       _bindSettings() {
         view._settingsBtn.addEventListener('click', () => {
-          const isOpen = view.isSettingsMenuOpen();
+          const isOpen = view._menu.classList.contains('open');
           if (isOpen) {
             view.closeLangSubmenu();
-            view.setSettingsMenuOpen(false);
+            view._menu.classList.remove('open');
+            view._settingsBtn.setAttribute('aria-expanded', 'false');
           } else {
-            if (Game.isRunning()) Lifecycle.setPaused(true);
-            view.setSettingsMenuOpen(true);
+             if (!Game.paused && !Game.gameOver) Lifecycle.setPaused(true);
+            view._menu.classList.add('open');
+            view._settingsBtn.setAttribute('aria-expanded', 'true');
             view.focusGhostToggle();
           }
         });
 
-        const SETTINGS_TOGGLES = [
-          { el: '_ghostToggle', toggle: 'toggleGhost', field: 'ghostEnabled', indicator: 'setGhostIndicator' },
-          { el: '_sevenBagToggle', toggle: 'toggleSevenBag', field: 'sevenBagEnabled', indicator: 'setSevenBagIndicator',
-            after: () => { Game.bag = []; if (Settings.sevenBagEnabled) Game.fillBag(); } },
-          { el: '_blackWhiteToggle', toggle: 'toggleBlackWhite', field: 'blackWhiteEnabled', indicator: 'setBlackWhiteIndicator' },
-          { el: '_gridToggle', toggle: 'toggleGrid', field: 'gridEnabled', indicator: 'setGridIndicator' },
-        ];
-        SETTINGS_TOGGLES.forEach(cfg => {
-          view[cfg.el].addEventListener('click', () => {
+        SETTINGS_CONFIG.forEach(cfg => {
+          const base = cfg.field.replace(/Enabled$/, '');
+          view[`_${base}Toggle`].addEventListener('click', () => {
             view.closeAllSubmenus();
-            Settings[cfg.toggle]();
-            view[cfg.indicator](Settings[cfg.field]);
-            if (cfg.after) cfg.after();
+            Settings[cfg.field] = !Settings[cfg.field];
+            Settings._save(cfg.key, Settings[cfg.field]);
+            view._setIndicator(view[`_${base}Indicator`], view[`_${base}Toggle`], Settings[cfg.field]);
+            if (cfg.field === 'sevenBagEnabled') PieceGenerator.sevenBag = Settings.sevenBagEnabled;
           });
         });
 
         view._langToggle.addEventListener('click', () => {
           view.closeRankingSubmenu();
-          const open = view.isLangSubmenuOpen();
-          view.setLangSubmenuOpen(!open);
-          if (!open) view.langOptions[0]?.focus();
+          const open = view._langSubmenu.classList.contains('open');
+          view._langSubmenu.classList.toggle('open', !open);
+          view._langToggle.setAttribute('aria-expanded', !open ? 'true' : 'false');
+          if (!open) view._langOptions[0]?.focus();
         });
 
         view._rankingToggle.addEventListener('click', () => {
           view.closeLangSubmenu();
-          const open = view.isRankingSubmenuOpen();
-          view.setRankingSubmenuOpen(!open);
-          if (!open) {
-            view.renderRanking();
-            view._rankingSubmenu.querySelector('.ranking-clear')?.focus();
-          }
+          const open = view._rankingSubmenu.classList.contains('open');
+          view._rankingSubmenu.classList.toggle('open', !open);
+          view._rankingToggle.setAttribute('aria-expanded', !open ? 'true' : 'false');
+          if (open) return;
+          view.renderRanking();
+          view._rankingSubmenu.querySelector('.ranking-clear')?.focus();
         });
 
-        view.langOptions.forEach(btn => {
+        view._langOptions.forEach(btn => {
           btn.addEventListener('click', () => {
             view.closeRankingSubmenu();
             const lang = btn.dataset.lang;
@@ -2804,7 +2675,7 @@
             view.setActiveLangOption(lang);
             view.updateLangToggleLabel();
             view.closeLangSubmenu();
-            view.setPauseAriaLabel(Game.paused);
+            view.updatePauseLabel();
           });
         });
       },
@@ -2828,11 +2699,12 @@
       init() {
         view.init();
         Settings.init();
+        PieceGenerator.sevenBag = Settings.sevenBagEnabled;
         Scores.load();
-        view.setGhostIndicator(Settings.ghostEnabled);
-        view.setSevenBagIndicator(Settings.sevenBagEnabled);
-        view.setBlackWhiteIndicator(Settings.blackWhiteEnabled);
-        view.setGridIndicator(Settings.gridEnabled);
+        SETTINGS_CONFIG.forEach(cfg => {
+          const base = cfg.field.replace(/Enabled$/, '');
+          view._setIndicator(view[`_${base}Indicator`], view[`_${base}Toggle`], Settings[cfg.field]);
+        });
         view.setActiveLangOption(I18N.current);
         view.updateLangToggleLabel();
         view.resize();
@@ -2854,8 +2726,7 @@
         Particles.update(dt);
         Shake.update(dt);
         HoldTransition.update(dt);
-        const o = Shake.offset();
-        view.applyShake(o.x, o.y);
+        view.applyShake(Shake._ox, Shake._oy);
 
         if (Game.gameOver) {
           RestartConfirm.cancel();
@@ -2863,31 +2734,34 @@
             this._overHandled = true;
             this._handleGameOver();
           }
-          view.showOverlay('over');
-          view.setPauseBtnVisible(false);
-          view.setBodyState(Game.paused, Game.gameOver);
-          view.setStats();
-          Render.draw();
-          return;
+          view.applyOverlays();
+          view._pauseBtn.classList.add('hidden');
         }
-        view.setBodyState(Game.paused, Game.gameOver);
+        view.applyBodyClasses();
         view.setStats();
-
-        Render.draw();
+        Render.draw({
+          ctx: view._ctx,
+          nextCtx: view._nextCtx,
+          holdCtx: view._holdCtx,
+          holdBtnCtx: view._holdBtnCtx,
+          holdBtnCanvas: view._holdBtnCanvas,
+          BLOCK: view.BLOCK,
+          VIEW_W: view.VIEW_W,
+          VIEW_H: view.VIEW_H,
+          NEXT_W: view.NEXT_W,
+          NEXT_H: view.NEXT_H,
+        });
+        if (Game.gameOver) return;
         this._rafId = requestAnimationFrame(t2 => this._loop(t2));
       },
 
       setPaused(v) {
         RestartConfirm.cancel();
         ClearConfirm.cancel();
-        Game.setPaused(v);
-        if (Game.gameOver) {
-          view.showOverlay('over');
-        } else {
-          view.showOverlay(Game.paused ? 'pause' : null);
-        }
-        view.setBodyState(Game.paused, Game.gameOver);
-        view.setPauseAriaLabel(Game.paused);
+        Game.paused = v;
+        view.applyOverlays();
+        view.applyBodyClasses();
+        view.updatePauseLabel();
       },
 
       togglePause() {
@@ -2898,10 +2772,8 @@
         Scores.lastRecorded = null;
         const score = Game.score;
         const prevBest = Scores.best();
-        let state;
-        if (forceNoBest) {
-          state = 'noBest';
-        } else {
+        let state = 'noBest';
+        if (! forceNoBest) {
           Scores.record(score);
           if (prevBest === null) state = score > 0 ? 'newBest' : 'noBest';
           else if (score > prevBest) state = 'newBest';
@@ -2918,10 +2790,10 @@
         ClearConfirm.cancel();
         this._overHandled = false;
         Game.resetGame();
-        view.showOverlay(null);
-        view.setPauseBtnVisible(true);
-        view.setBodyState(Game.paused, Game.gameOver);
-        view.setPauseAriaLabel(Game.paused);
+        view.applyOverlays();
+        view._pauseBtn.classList.remove('hidden');
+        view.applyBodyClasses();
+        view.updatePauseLabel();
         view.setStats();
         cancelAnimationFrame(this._rafId);
         if (this._lastTime > 0) this.start();
