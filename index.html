@@ -107,7 +107,14 @@
       margin-bottom: 6px;
       text-transform: uppercase;
       letter-spacing: 1px;
+      white-space: nowrap;
     }
+    .bag-count {
+      color: var(--color-accent);
+      font-family: sans-serif;
+      display: none;
+    }
+    .bag-count[data-bag] { display: inline; }
     .panel .value {
       font-size: 24px;
       font-weight: bold;
@@ -666,7 +673,7 @@
         <div class="value" id="lines">0</div>
       </div>
       <div class="panel">
-        <h3 data-i18n="next">Next</h3>
+        <h3><span data-i18n="next">Next</span><span class="bag-count" data-bag="-1"></span></h3>
         <canvas id="next-canvas"></canvas>
       </div>
       <div class="panel controls">
@@ -1380,6 +1387,8 @@
       },
 
       reset() { this._bag = []; },
+
+      get bagRemaining() { return this._sevenBag ? this._bag.length + 1 : -1; },
     };
 
     // --- Game ---
@@ -1510,6 +1519,7 @@
           this.heldPiece = currentType;
           this.current = this.next;
           this.next = PieceGenerator.next();
+          View.updateNextHeader();
         } else {
           const swapType = this.heldPiece;
           this.heldPiece = currentType;
@@ -1561,6 +1571,7 @@
         this.holdUsed = false;
         this.current = this.next;
         this.next = PieceGenerator.next();
+        View.updateNextHeader();
         this.dropCounter = 0;
         this.invalidateGhost();
         // Suppress initial drop tick when soft-drop was held across lock
@@ -2083,6 +2094,7 @@
       _langToggle: null, _langSubmenu: null,
       _langOptions: null,
       _overlayPause: null, _overlayOver: null,
+      _bagCount: null,
       _stats: {},
       _actionBtns: null,
       _gameArea: null,
@@ -2128,6 +2140,7 @@
         // Overlays
         this._overlayPause = document.getElementById('overlay-pause');
         this._overlayOver = document.getElementById('overlay-over');
+        this._bagCount = document.querySelector('.bag-count');
         // Stats
         this._stats = {
           score: document.getElementById('score'),
@@ -2176,6 +2189,16 @@
           if (this._statsCache[k] === stats[k]) continue;
           this._statsCache[k] = stats[k];
           this._stats[k].textContent = stats[k];
+        }
+      },
+
+      updateNextHeader() {
+        const bag = PieceGenerator.bagRemaining;
+        this._bagCount.textContent = '';
+        this._bagCount.removeAttribute('data-bag');
+        if (bag >= 0) {
+          this._bagCount.textContent = ` (${bag})`;
+          this._bagCount.dataset.bag = bag;
         }
       },
 
@@ -2675,7 +2698,10 @@
             Settings[cfg.field] = !Settings[cfg.field];
             Settings._save(cfg.key, Settings[cfg.field]);
             View._setIndicator(View[`_${base}Indicator`], View[`_${base}Toggle`], Settings[cfg.field]);
-            if (cfg.field === 'sevenBagEnabled') PieceGenerator.sevenBag = Settings.sevenBagEnabled;
+            if (cfg.field === 'sevenBagEnabled') {
+              PieceGenerator.sevenBag = Settings.sevenBagEnabled;
+              View.updateNextHeader();
+            }
           });
         });
 
@@ -2708,6 +2734,7 @@
             RestartConfirm.cancel();
             I18n.setLanguage(lang);
             I18n.applyI18n();
+            View.updateNextHeader();
             View.setActiveLangOption(lang);
             View.updateLangToggleLabel();
             View.closeLangSubmenu();
@@ -2831,6 +2858,7 @@
         View.applyBodyClasses();
         View.updatePauseLabel();
         View.setStats();
+        View.updateNextHeader();
         cancelAnimationFrame(this._rafId);
         if (this._lastTime > 0) this.start();
       },
