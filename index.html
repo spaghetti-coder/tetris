@@ -786,28 +786,15 @@
       document.fonts?.ready?.then(() => { if (!isLoaded()) addFallback(); });
     })();
 
-    // --- I18N ---
+    // --- I18n ---
 
     const LANG_STORAGE_KEY = 'tetris.lang';
 
-    const I18N = {
-      langs: ['en', 'ru', 'bg', 'ro', 'fr', 'es', 'zh', 'ja', 'eo', 'ia', 'toki'],
-      default: 'en',
-      names: {
-        en: 'English',
-        ru: 'Русский',
-        bg: 'Български',
-        ro: 'Română',
-        fr: 'Français',
-        es: 'Español',
-        zh: '中文',
-        ja: '日本語',
-        eo: 'Esperanto',
-        ia: 'Interlingua',
-        toki: 'Toki Pona'
-      },
-      messages: {
-        en: {
+    const I18n = {
+      en: {
+        default: true,
+        name: 'English',
+        messages: {
           score: 'Score',
           level: 'Level',
           lines: 'Lines',
@@ -842,8 +829,11 @@
           confirmClear: 'Confirm Clear',
           noRecords: 'No records yet',
           pageTitle: 'Tetris'
-        },
-        ru: {
+        }
+      },
+      ru: {
+        name: 'Русский',
+        messages: {
           score: 'Очко',
           level: 'Уровень',
           lines: 'Линий',
@@ -878,8 +868,11 @@
           confirmClear: 'Подтвердить очистку',
           noRecords: 'Пока пусто',
           pageTitle: 'Тетрис'
-        },
-        bg: {
+        }
+      },
+      bg: {
+        name: 'Български',
+        messages: {
           score: 'Точки',
           level: 'Ниво',
           lines: 'Редове',
@@ -914,8 +907,11 @@
           confirmClear: 'Потвърди изчистване',
           noRecords: 'Все още няма записи',
           pageTitle: 'Тетрис'
-        },
-        ro: {
+        }
+      },
+      ro: {
+        name: 'Română',
+        messages: {
           score: 'Scor',
           level: 'Nivel',
           lines: 'Linii',
@@ -950,8 +946,11 @@
           confirmClear: 'Confirmă ștergerea',
           noRecords: 'Nicio înregistrare încă',
           pageTitle: 'Tetris'
-        },
-        fr: {
+        }
+      },
+      fr: {
+        name: 'Français',
+        messages: {
           score: 'Score',
           level: 'Niveau',
           lines: 'Lignes',
@@ -986,8 +985,11 @@
           confirmClear: 'Confirmer l\'effacement',
           noRecords: 'Pas encore de records',
           pageTitle: 'Tetris'
-        },
-        es: {
+        }
+      },
+      es: {
+        name: 'Español',
+        messages: {
           score: 'Puntuación',
           level: 'Nivel',
           lines: 'Líneas',
@@ -1022,80 +1024,11 @@
           confirmClear: 'Confirmar borrado',
           noRecords: 'Sin registros aún',
           pageTitle: 'Tetris'
-        },
-        zh: {
-          score: '分数',
-          level: '等级',
-          lines: '行数',
-          next: '下一个',
-          move: '移动',
-          rotate: '旋转',
-          softDrop: '软降',
-          hardDrop: '硬降',
-          hold: '暂存',
-          pause: '暂停',
-          restart: '重新开始',
-          confirmRestart: '确认重新开始',
-          controls: '操作',
-          paused: '已暂停',
-          resume: '继续',
-          resumeLabel: '继续',
-          gameOver: '游戏结束',
-          playAgain: '再来一局',
-          settings: '设置',
-          ghost: '影子',
-          sevenBag: '7袋',
-          blackWhite: '黑白',
-          grid: '网格',
-          langLabel: '语言',
-          ranking: '排行榜',
-          bestScore: '最高分：',
-          previousBest: '上次最高：',
-          youCanBetter: '你能更好！',
-          soClose: '差一点！',
-          yourScore: '你的分数：',
-          clear: '清除',
-          confirmClear: '确认清除',
-          noRecords: '暂无记录',
-          pageTitle: '俄罗斯方块'
-        },
-        ja: {
-          score: 'スコア',
-          level: 'レベル',
-          lines: 'ライン',
-          next: 'ネクスト',
-          move: '移動',
-          rotate: '回転',
-          softDrop: 'ソフトドロップ',
-          hardDrop: 'ハードドロップ',
-          hold: 'ホールド',
-          pause: '一時停止',
-          restart: 'リスタート',
-          confirmRestart: 'リスタート確認',
-          controls: '操作',
-          paused: '一時停止中',
-          resume: '再開',
-          resumeLabel: '再開',
-          gameOver: 'ゲームオーバー',
-          playAgain: 'もう一度',
-          settings: '設定',
-          ghost: 'ゴースト',
-          sevenBag: '7バッグ',
-          blackWhite: '白黒',
-          grid: 'グリッド',
-          langLabel: '言語',
-          ranking: 'ランキング',
-          bestScore: 'ベストスコア：',
-          previousBest: '前回ベスト：',
-          youCanBetter: 'もっといける！',
-          soClose: 'あと少し！',
-          yourScore: 'あなたのスコア：',
-          clear: 'クリア',
-          confirmClear: 'クリア確認',
-          noRecords: '記録なし',
-          pageTitle: 'テトリス'
-        },
-        eo: {
+        }
+      },
+      eo: {
+        name: 'Esperanto',
+        messages: {
           score: 'Poentoj',
           level: 'Nivelo',
           lines: 'Linioj',
@@ -1130,8 +1063,11 @@
           confirmClear: 'Konfirmi viŝadon',
           noRecords: 'Neniu rekordo ankoraŭ',
           pageTitle: 'Tetriso'
-        },
-        ia: {
+        }
+      },
+      ia: {
+        name: 'Interlingua',
+        messages: {
           score: 'Punctos',
           level: 'Nivello',
           lines: 'Linias',
@@ -1166,8 +1102,50 @@
           confirmClear: 'Confirmar clarar',
           noRecords: 'Nulle recordas ancora',
           pageTitle: 'Tetris'
-        },
-        toki: {
+        }
+      },
+      ja: {
+        name: '日本語',
+        messages: {
+          score: 'スコア',
+          level: 'レベル',
+          lines: 'ライン',
+          next: 'ネクスト',
+          move: '移動',
+          rotate: '回転',
+          softDrop: 'ソフトドロップ',
+          hardDrop: 'ハードドロップ',
+          hold: 'ホールド',
+          pause: '一時停止',
+          restart: 'リスタート',
+          confirmRestart: 'リスタート確認',
+          controls: '操作',
+          paused: '一時停止中',
+          resume: '再開',
+          resumeLabel: '再開',
+          gameOver: 'ゲームオーバー',
+          playAgain: 'もう一度',
+          settings: '設定',
+          ghost: 'ゴースト',
+          sevenBag: '7バッグ',
+          blackWhite: '白黒',
+          grid: 'グリッド',
+          langLabel: '言語',
+          ranking: 'ランキング',
+          bestScore: 'ベストスコア：',
+          previousBest: '前回ベスト：',
+          youCanBetter: 'もっといける！',
+          soClose: 'あと少し！',
+          yourScore: 'あなたのスコア：',
+          clear: 'クリア',
+          confirmClear: 'クリア確認',
+          noRecords: '記録なし',
+          pageTitle: 'テトリス'
+        }
+      },
+      toki: {
+        name: 'Toki Pona',
+        messages: {
           score: 'nanpa',
           level: 'suli',
           lines: 'linja',
@@ -1204,10 +1182,70 @@
           pageTitle: 'tetro'
         }
       },
+      zh: {
+        name: '中文',
+        messages: {
+          score: '分数',
+          level: '等级',
+          lines: '行数',
+          next: '下一个',
+          move: '移动',
+          rotate: '旋转',
+          softDrop: '软降',
+          hardDrop: '硬降',
+          hold: '暂存',
+          pause: '暂停',
+          restart: '重新开始',
+          confirmRestart: '确认重新开始',
+          controls: '操作',
+          paused: '已暂停',
+          resume: '继续',
+          resumeLabel: '继续',
+          gameOver: '游戏结束',
+          playAgain: '再来一局',
+          settings: '设置',
+          ghost: '影子',
+          sevenBag: '7袋',
+          blackWhite: '黑白',
+          grid: '网格',
+          langLabel: '语言',
+          ranking: '排行榜',
+          bestScore: '最高分：',
+          previousBest: '上次最高：',
+          youCanBetter: '你能更好！',
+          soClose: '差一点！',
+          yourScore: '你的分数：',
+          clear: '清除',
+          confirmClear: '确认清除',
+          noRecords: '暂无记录',
+          pageTitle: '俄罗斯方块'
+        }
+      },
+
       current: 'en',
 
+      get langs() {
+        return Object.keys(this).filter(k => {
+          const d = Object.getOwnPropertyDescriptor(this, k);
+          return d && !d.get && this[k]?.messages != null;
+        }).sort();
+      },
+
+      get default() {
+        for (const k of this.langs) {
+          if (this[k].default) return k;
+        }
+        return this.langs[0];
+      },
+
+      get names() {
+        const n = {};
+        for (const k of this.langs) n[k] = this[k].name;
+        return n;
+      },
+
       t(key) {
-        return this.messages[this.current]?.[key] ?? key;
+        return this[this.current]?.messages?.[key] ?? key;
       },
 
       detectLanguage() {
@@ -1237,8 +1275,8 @@
       }
     };
 
-    I18N.setLanguage(I18N.detectLanguage());
-    I18N.applyI18n();
+    I18n.setLanguage(I18n.detectLanguage());
+    I18n.applyI18n();
     document.documentElement.classList.remove('i18n-loading');
 
     // --- Constants ---
@@ -1348,7 +1386,7 @@
 
     const randInt = (() => {
       const cryptoSrc = globalThis.crypto;
-      if (! typeof cryptoSrc?.getRandomValues === 'function') {
+      if (!typeof cryptoSrc?.getRandomValues === 'function') {
         return max => Math.floor(Math.random() * max);
       }
       const buf = new Uint32Array(1);
@@ -1493,8 +1531,6 @@
         this.resetLock();
         this.tryLock();
       },
-
-
 
       // -- Locking --
 
@@ -1774,7 +1810,7 @@
             this.fadeOut.blocks = null;
           }
         }
-        if (! this.fadeIn.active) return;
+        if (!this.fadeIn.active) return;
         this.fadeIn.alpha += speed;
         if (this.fadeIn.alpha < 1) return;
         this.fadeIn.alpha = 1;
@@ -1815,7 +1851,7 @@
       request(c) {
         this.cancel();
         this._btn = c;
-        c.textContent = I18N.t(i18nKey);
+        c.textContent = I18n.t(i18nKey);
         this._meta = onApply(c);
         Shake.trigger(16);
       },
@@ -1823,7 +1859,7 @@
       cancel() {
         if (!this._btn) return;
         const key = this._btn.dataset.i18n;
-        if (key) this._btn.textContent = I18N.t(key);
+        if (key) this._btn.textContent = I18n.t(key);
         onRevert(this._btn, this._meta);
         this._btn = null;
         this._meta = null;
@@ -1839,7 +1875,7 @@
 
     const ClearConfirm = createConfirm(
       'confirmClear',
-      () => { Scores.clear(); view.renderRanking(); Lifecycle.rerenderGameOver(); },
+      () => { Scores.clear(); View.renderRanking(); Lifecycle.rerenderGameOver(); },
       (btn) => btn.classList.add('confirming'),
       (btn) => btn.classList.remove('confirming')
     );
@@ -2034,7 +2070,7 @@
       return rect;
     };
 
-    const view = {
+    const View = {
       _canvas: null, _ctx: null,
       _nextCanvas: null, _nextCtx: null,
       _holdCanvas: null, _holdCtx: null,
@@ -2114,7 +2150,7 @@
 
       initLangOptions() {
         this._langSubmenu.innerHTML = '';
-        I18N.langs.forEach(lang => {
+        I18n.langs.forEach(lang => {
           const btn = document.createElement('button');
           btn.className = 'lang-option';
           btn.type = 'button';
@@ -2124,7 +2160,7 @@
           const indicator = document.createElement('span');
           indicator.className = 'indicator';
           const name = document.createElement('span');
-          name.textContent = I18N.names[lang];
+          name.textContent = I18n.names[lang];
           btn.appendChild(indicator);
           btn.appendChild(name);
           this._langSubmenu.appendChild(btn);
@@ -2160,7 +2196,7 @@
         document.body.classList.toggle('game-over', Game.gameOver);
       },
       updatePauseLabel() {
-        this._pauseBtn.setAttribute('aria-label', I18N.t(Game.paused ? 'resumeLabel' : 'pause'));
+        this._pauseBtn.setAttribute('aria-label', I18n.t(Game.paused ? 'resumeLabel' : 'pause'));
       },
       applyOverlays() {
         this._overlayPause.classList.toggle('hidden', !Game.paused || Game.gameOver);
@@ -2235,8 +2271,8 @@
         });
       },
       updateLangToggleLabel() {
-        const name = I18N.names[I18N.current];
-        const label = I18N.t('langLabel');
+        const name = I18n.names[I18n.current];
+        const label = I18n.t('langLabel');
         this._langToggle.querySelector('.label').textContent = `${label}: ${name}`;
       },
 
@@ -2253,7 +2289,7 @@
         if (!scores.length) {
           const empty = document.createElement('div');
           empty.className = 'ranking-empty';
-          empty.textContent = I18N.t('noRecords');
+          empty.textContent = I18n.t('noRecords');
           list.appendChild(empty);
           sub.appendChild(list);
           return;
@@ -2278,7 +2314,7 @@
         clear.type = 'button';
         clear.className = 'ranking-clear';
         clear.dataset.i18n = 'clear';
-        clear.textContent = I18N.t('clear');
+        clear.textContent = I18n.t('clear');
         clear.addEventListener('click', () => {
           if (ClearConfirm.isPending(clear)) ClearConfirm.confirm();
           else ClearConfirm.request(clear);
@@ -2411,19 +2447,19 @@
       _bindOutsideClick() {
         document.addEventListener('click', e => {
           this._closeSubmenuOnOutsideClick(
-            e, view._rankingSubmenu, view._rankingToggle,
-            () => view._rankingSubmenu.classList.contains('open'),
-            view.closeRankingSubmenu.bind(view)
+            e, View._rankingSubmenu, View._rankingToggle,
+            () => View._rankingSubmenu.classList.contains('open'),
+            View.closeRankingSubmenu.bind(View)
           );
           this._closeSubmenuOnOutsideClick(
-            e, view._langSubmenu, view._langToggle,
-            () => view._langSubmenu.classList.contains('open'),
-            view.closeLangSubmenu.bind(view)
+            e, View._langSubmenu, View._langToggle,
+            () => View._langSubmenu.classList.contains('open'),
+            View.closeLangSubmenu.bind(View)
           );
-          if (view._menu.classList.contains('open') &&
-              !view._menu.contains(e.target) &&
-              !view._settingsBtn.contains(e.target)) {
-            view.closeSettingsMenu();
+          if (View._menu.classList.contains('open') &&
+              !View._menu.contains(e.target) &&
+              !View._settingsBtn.contains(e.target)) {
+            View.closeSettingsMenu();
           }
         });
       },
@@ -2444,9 +2480,9 @@
 
       _handleMenuKey(key) {
         if (key !== 'escape') return;
-        if (view._rankingSubmenu.classList.contains('open')) view.closeRankingSubmenu();
-        else if (view._langSubmenu.classList.contains('open')) view.closeLangSubmenu();
-        else view.closeSettingsMenu();
+        if (View._rankingSubmenu.classList.contains('open')) View.closeRankingSubmenu();
+        else if (View._langSubmenu.classList.contains('open')) View.closeLangSubmenu();
+        else View.closeSettingsMenu();
       },
 
       _handleGameplayKey(key, e) {
@@ -2482,7 +2518,7 @@
       _bindKeyboard() {
         document.addEventListener('keydown', e => {
           const key = e.key.toLowerCase();
-          const menuOpen = view._menu.classList.contains('open');
+          const menuOpen = View._menu.classList.contains('open');
 
           if (Game.gameOver) {
             this._handleGameOverKey(key, menuOpen);
@@ -2575,8 +2611,8 @@
           rotate:  () => Game.srsRotate(1),
           pause:   () => {
             if (Game.gameOver) return;
-            if (view._menu.classList.contains('open')) {
-              view.closeSettingsMenu();
+            if (View._menu.classList.contains('open')) {
+              View.closeSettingsMenu();
               if (Game.paused) Lifecycle.setPaused(false);
               return;
             }
@@ -2584,11 +2620,11 @@
           },
           resume:  () => {
             if (Game.gameOver) return;
-            view.closeSettingsMenu();
+            View.closeSettingsMenu();
             Lifecycle.setPaused(false);
           },
           restart: (btn) => {
-            view.closeSettingsMenu();
+            View.closeSettingsMenu();
             if (btn.hasAttribute('data-confirm-restart')) {
               if (RestartConfirm.isPending(btn)) RestartConfirm.confirm();
               else RestartConfirm.request(btn);
@@ -2599,7 +2635,7 @@
           }
         };
 
-        view._actionBtns.forEach(btn => {
+        View._actionBtns.forEach(btn => {
           const a = btn.dataset.action;
           const fn = ACTIONS[a];
           if (!fn) return;
@@ -2618,64 +2654,64 @@
       // -- Settings --
 
       _bindSettings() {
-        view._settingsBtn.addEventListener('click', () => {
-          const isOpen = view._menu.classList.contains('open');
+        View._settingsBtn.addEventListener('click', () => {
+          const isOpen = View._menu.classList.contains('open');
           if (isOpen) {
-            view.closeLangSubmenu();
-            view._menu.classList.remove('open');
-            view._settingsBtn.setAttribute('aria-expanded', 'false');
+            View.closeLangSubmenu();
+            View._menu.classList.remove('open');
+            View._settingsBtn.setAttribute('aria-expanded', 'false');
           } else {
              if (!Game.paused && !Game.gameOver) Lifecycle.setPaused(true);
-            view._menu.classList.add('open');
-            view._settingsBtn.setAttribute('aria-expanded', 'true');
-            view.focusGhostToggle();
+            View._menu.classList.add('open');
+            View._settingsBtn.setAttribute('aria-expanded', 'true');
+            View.focusGhostToggle();
           }
         });
 
         SETTINGS_CONFIG.forEach(cfg => {
           const base = cfg.field.replace(/Enabled$/, '');
-          view[`_${base}Toggle`].addEventListener('click', () => {
-            view.closeAllSubmenus();
+          View[`_${base}Toggle`].addEventListener('click', () => {
+            View.closeAllSubmenus();
             Settings[cfg.field] = !Settings[cfg.field];
             Settings._save(cfg.key, Settings[cfg.field]);
-            view._setIndicator(view[`_${base}Indicator`], view[`_${base}Toggle`], Settings[cfg.field]);
+            View._setIndicator(View[`_${base}Indicator`], View[`_${base}Toggle`], Settings[cfg.field]);
             if (cfg.field === 'sevenBagEnabled') PieceGenerator.sevenBag = Settings.sevenBagEnabled;
           });
         });
 
-        view._langToggle.addEventListener('click', () => {
-          view.closeRankingSubmenu();
-          const open = view._langSubmenu.classList.contains('open');
-          view._langSubmenu.classList.toggle('open', !open);
-          view._langToggle.setAttribute('aria-expanded', !open ? 'true' : 'false');
-          if (!open) view._langOptions[0]?.focus();
+        View._langToggle.addEventListener('click', () => {
+          View.closeRankingSubmenu();
+          const open = View._langSubmenu.classList.contains('open');
+          View._langSubmenu.classList.toggle('open', !open);
+          View._langToggle.setAttribute('aria-expanded', !open ? 'true' : 'false');
+          if (!open) View._langOptions[0]?.focus();
         });
 
-        view._rankingToggle.addEventListener('click', () => {
-          view.closeLangSubmenu();
-          const open = view._rankingSubmenu.classList.contains('open');
-          view._rankingSubmenu.classList.toggle('open', !open);
-          view._rankingToggle.setAttribute('aria-expanded', !open ? 'true' : 'false');
+        View._rankingToggle.addEventListener('click', () => {
+          View.closeLangSubmenu();
+          const open = View._rankingSubmenu.classList.contains('open');
+          View._rankingSubmenu.classList.toggle('open', !open);
+          View._rankingToggle.setAttribute('aria-expanded', !open ? 'true' : 'false');
           if (open) return;
-          view.renderRanking();
-          view._rankingSubmenu.querySelector('.ranking-clear')?.focus();
+          View.renderRanking();
+          View._rankingSubmenu.querySelector('.ranking-clear')?.focus();
         });
 
-        view._langOptions.forEach(btn => {
+        View._langOptions.forEach(btn => {
           btn.addEventListener('click', () => {
-            view.closeRankingSubmenu();
+            View.closeRankingSubmenu();
             const lang = btn.dataset.lang;
-            if (!lang || lang === I18N.current) {
-              view.closeLangSubmenu();
+            if (!lang || lang === I18n.current) {
+              View.closeLangSubmenu();
               return;
             }
             RestartConfirm.cancel();
-            I18N.setLanguage(lang);
-            I18N.applyI18n();
-            view.setActiveLangOption(lang);
-            view.updateLangToggleLabel();
-            view.closeLangSubmenu();
-            view.updatePauseLabel();
+            I18n.setLanguage(lang);
+            I18n.applyI18n();
+            View.setActiveLangOption(lang);
+            View.updateLangToggleLabel();
+            View.closeLangSubmenu();
+            View.updatePauseLabel();
           });
         });
       },
@@ -2697,20 +2733,20 @@
       _rafId: 0,
 
       init() {
-        view.init();
+        View.init();
         Settings.init();
         PieceGenerator.sevenBag = Settings.sevenBagEnabled;
         Scores.load();
         SETTINGS_CONFIG.forEach(cfg => {
           const base = cfg.field.replace(/Enabled$/, '');
-          view._setIndicator(view[`_${base}Indicator`], view[`_${base}Toggle`], Settings[cfg.field]);
+          View._setIndicator(View[`_${base}Indicator`], View[`_${base}Toggle`], Settings[cfg.field]);
         });
-        view.setActiveLangOption(I18N.current);
-        view.updateLangToggleLabel();
-        view.resize();
+        View.setActiveLangOption(I18n.current);
+        View.updateLangToggleLabel();
+        View.resize();
         Input.init();
-        window.addEventListener('resize', () => view.resize());
-        window.addEventListener('orientationchange', () => setTimeout(() => view.resize(), 100));
+        window.addEventListener('resize', () => View.resize());
+        window.addEventListener('orientationchange', () => setTimeout(() => View.resize(), 100));
         this.resetGame();
       },
 
@@ -2726,7 +2762,7 @@
         Particles.update(dt);
         Shake.update(dt);
         HoldTransition.update(dt);
-        view.applyShake(Shake._ox, Shake._oy);
+        View.applyShake(Shake._ox, Shake._oy);
 
         if (Game.gameOver) {
           RestartConfirm.cancel();
@@ -2734,22 +2770,22 @@
             this._overHandled = true;
             this._handleGameOver();
           }
-          view.applyOverlays();
-          view._pauseBtn.classList.add('hidden');
+          View.applyOverlays();
+          View._pauseBtn.classList.add('hidden');
         }
-        view.applyBodyClasses();
-        view.setStats();
+        View.applyBodyClasses();
+        View.setStats();
         Render.draw({
-          ctx: view._ctx,
-          nextCtx: view._nextCtx,
-          holdCtx: view._holdCtx,
-          holdBtnCtx: view._holdBtnCtx,
-          holdBtnCanvas: view._holdBtnCanvas,
-          BLOCK: view.BLOCK,
-          VIEW_W: view.VIEW_W,
-          VIEW_H: view.VIEW_H,
-          NEXT_W: view.NEXT_W,
-          NEXT_H: view.NEXT_H,
+          ctx: View._ctx,
+          nextCtx: View._nextCtx,
+          holdCtx: View._holdCtx,
+          holdBtnCtx: View._holdBtnCtx,
+          holdBtnCanvas: View._holdBtnCanvas,
+          BLOCK: View.BLOCK,
+          VIEW_W: View.VIEW_W,
+          VIEW_H: View.VIEW_H,
+          NEXT_W: View.NEXT_W,
+          NEXT_H: View.NEXT_H,
         });
         if (Game.gameOver) return;
         this._rafId = requestAnimationFrame(t2 => this._loop(t2));
@@ -2759,9 +2795,9 @@
         RestartConfirm.cancel();
         ClearConfirm.cancel();
         Game.paused = v;
-        view.applyOverlays();
-        view.applyBodyClasses();
-        view.updatePauseLabel();
+        View.applyOverlays();
+        View.applyBodyClasses();
+        View.updatePauseLabel();
       },
 
       togglePause() {
@@ -2773,14 +2809,14 @@
         const score = Game.score;
         const prevBest = Scores.best();
         let state = 'noBest';
-        if (! forceNoBest) {
+        if (!forceNoBest) {
           Scores.record(score);
           if (prevBest === null) state = score > 0 ? 'newBest' : 'noBest';
           else if (score > prevBest) state = 'newBest';
           else if (score === prevBest) state = 'tiedBest';
           else state = 'notBest';
         }
-        view.renderGameOver(state, score, prevBest);
+        View.renderGameOver(state, score, prevBest);
       },
 
       rerenderGameOver() { this._handleGameOver(true); },
@@ -2790,11 +2826,11 @@
         ClearConfirm.cancel();
         this._overHandled = false;
         Game.resetGame();
-        view.applyOverlays();
-        view._pauseBtn.classList.remove('hidden');
-        view.applyBodyClasses();
-        view.updatePauseLabel();
-        view.setStats();
+        View.applyOverlays();
+        View._pauseBtn.classList.remove('hidden');
+        View.applyBodyClasses();
+        View.updatePauseLabel();
+        View.setStats();
         cancelAnimationFrame(this._rafId);
         if (this._lastTime > 0) this.start();
       },
