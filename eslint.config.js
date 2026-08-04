@@ -37,6 +37,7 @@ export default [
       "no-new-func": "error",
       "no-new-wrappers": "error",
       "no-with": "error",
+      "indent": ["error", 2],
     },
   },
 ];
