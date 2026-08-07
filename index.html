@@ -10,27 +10,27 @@
     .i18n-loading body { visibility: hidden; }
     /* --- Tokens --- */
     :root {
-      --color-bg: #1a1a2e;
-      --color-panel: #16213e;
-      --color-accent: #e94560;
-      --color-accent-dark: #c9354c;
-      --color-text: #eee;
-      --color-muted: #999;
-      --color-dim: #ccc;
-      --color-border: #333;
-      --color-border-mid: #444;
-      --color-border-light: #555;
-      --color-border-icon: #777;
-      --color-glass: rgb(22 33 62 / 0.88);
-      --color-glass-active: rgb(40 55 95 / 0.95);
-      --color-accent-glow: rgb(233 69 96 / 0.12);
-      --color-overlay: rgb(0 0 0 / 0.72);
-      --color-kbd-top: #2a2a44;
-      --color-kbd-bot: #16162a;
-      --color-kbd-border: #4a4a6a;
-      --color-kbd-border-bot: #2a2a3e;
-      --color-key-active: #233456;
-      --color-overlay-btn-text: #fff;
+      --color-bg: #0d0d1a;
+      --color-panel: rgb(255 255 255 / 0.04);
+      --color-accent: #00d4ff;
+      --color-accent-dark: #00a8cc;
+      --color-text: #e8eaf0;
+      --color-muted: #7a8099;
+      --color-dim: #b0b8cc;
+      --color-border: rgb(0 212 255 / 0.12);
+      --color-border-mid: rgb(0 212 255 / 0.2);
+      --color-border-light: rgb(0 212 255 / 0.3);
+      --color-border-icon: rgb(0 212 255 / 0.25);
+      --color-glass: rgb(13 13 30 / 0.75);
+      --color-glass-active: rgb(0 212 255 / 0.12);
+      --color-accent-glow: rgb(0 212 255 / 0.1);
+      --color-overlay: rgb(5 5 18 / 0.82);
+      --color-kbd-top: rgb(255 255 255 / 0.06);
+      --color-kbd-bot: rgb(0 0 0 / 0.3);
+      --color-kbd-border: rgb(0 212 255 / 0.3);
+      --color-kbd-border-bot: rgb(0 212 255 / 0.12);
+      --color-key-active: rgb(0 212 255 / 0.18);
+      --color-overlay-btn-text: #0d0d1a;
     }
 
     /* --- Layout --- */
@@ -44,7 +44,20 @@
       justify-content: center;
       align-items: center;
     }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgb(0 212 255 / 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%, rgb(120 80 255 / 0.07) 0%, transparent 60%);
+      animation: bgPulse 12s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
     .wrapper {
+      position: relative;
+      z-index: 1;
       display: flex;
       gap: 24px;
       align-items: flex-start;
@@ -96,17 +109,19 @@
     }
     .panel {
       background: var(--color-panel);
-      border: 1px solid var(--color-border);
-      border-radius: 6px;
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border-mid);
+      border-radius: 12px;
       padding: 12px;
       text-align: center;
+      box-shadow: 0 0 16px rgb(0 212 255 / 0.06), inset 0 1px 0 rgb(255 255 255 / 0.06);
     }
     .panel h3 {
-      font-size: 13px;
+      font-size: 11px;
       color: var(--color-muted);
       margin-bottom: 6px;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       white-space: nowrap;
     }
     .bag-count {
@@ -116,9 +131,10 @@
     }
     .bag-count[data-bag] { display: inline; }
     .panel .value {
-      font-size: 24px;
+      font-size: 26px;
       font-weight: bold;
       color: var(--color-accent);
+      text-shadow: 0 0 12px rgb(0 212 255 / 0.6), 0 0 24px rgb(0 212 255 / 0.3);
     }
     .icon-btn {
       position: absolute;
@@ -128,11 +144,21 @@
       height: 38px;
       color: var(--color-accent);
       cursor: pointer;
-      transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+      transition: background 150ms ease, border-color 150ms ease, opacity 150ms ease, box-shadow 150ms ease;
     }
-    .icon-btn:active { background: var(--color-glass-active); }
+    .icon-btn:active {
+      background: var(--color-glass-active);
+      box-shadow: 0 0 12px rgb(0 212 255 / 0.4);
+    }
+    @media (hover: hover) {
+      .icon-btn:hover {
+        background: var(--color-glass-active);
+        border-color: var(--color-accent);
+        box-shadow: 0 0 10px rgb(0 212 255 / 0.3);
+      }
+    }
     /* Dim icon buttons during active play; restore full opacity when no play */
-    body:not(.paused):not(.game-over) .icon-btn { opacity: 0.7; color: #ff6b81; }
+    body:not(.paused):not(.game-over) .icon-btn { opacity: 0.65; color: rgb(0 212 255 / 0.7); }
     body:not(.paused):not(.game-over) .icon-btn:focus-visible,
     body:not(.paused):not(.game-over) .icon-btn:active { opacity: 1; color: var(--color-accent); }
     @media (hover: hover) {
@@ -161,14 +187,15 @@
       top: 50%;
       transform: translateY(-50%);
       white-space: nowrap;
-      color: var(--color-muted);
-      background: var(--color-panel);
+      color: var(--color-dim);
+      background: rgb(13 13 30 / 0.92);
+      backdrop-filter: blur(8px);
       border: 1px solid var(--color-border-light);
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-size: 14px;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 13px;
       line-height: 1.2;
-      box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+      box-shadow: 0 4px 16px rgb(0 0 0 / 0.4), 0 0 8px rgb(0 212 255 / 0.1);
       pointer-events: none;
     }
     .settings-item .label::before {
@@ -228,15 +255,16 @@
       min-width: 26px;
       height: 24px;
       padding: 0 7px;
-      background: linear-gradient(180deg, var(--color-kbd-top), var(--color-kbd-bot));
+      background: linear-gradient(160deg, var(--color-kbd-top), var(--color-kbd-bot));
       border: 1px solid var(--color-kbd-border);
       border-bottom-color: var(--color-kbd-border-bot);
-      border-radius: 5px;
+      border-radius: 6px;
       font-family: Consolas, 'Courier New', monospace;
       font-size: 11px;
       font-weight: bold;
       color: var(--color-accent);
-      box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 0 rgb(0 0 0 / 0.3);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 2px 4px rgb(0 0 0 / 0.4), 0 0 6px rgb(0 212 255 / 0.12);
+      text-shadow: 0 0 6px rgb(0 212 255 / 0.5);
     }
     .controls kbd svg {
       width: 12px;
@@ -252,20 +280,27 @@
       justify-self: start;
     }
     .key {
-      background: var(--color-panel);
+      background: rgb(255 255 255 / 0.04);
+      backdrop-filter: blur(8px);
       border: 1px solid var(--color-border-mid);
       color: var(--color-accent);
       font-size: 24px;
       font-weight: bold;
-      border-radius: 8px;
+      border-radius: 12px;
       cursor: pointer;
       font-family: inherit;
+      box-shadow: 0 0 10px rgb(0 212 255 / 0.06), inset 0 1px 0 rgb(255 255 255 / 0.06);
+      transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
     }
-    .key:active { background: var(--color-key-active); border-color: var(--color-accent); }
+    .key:active {
+      background: var(--color-key-active);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 16px rgb(0 212 255 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    }
 
     /* --- Canvas area --- */
     canvas {
-      border: 2px solid var(--color-border-mid);
+      border: 1px solid var(--color-border-mid);
       border-radius: 4px;
       touch-action: none;
       display: block;
@@ -277,7 +312,12 @@
       position: relative;
       display: inline-block;
       line-height: 0;
-      background: #0f0f23;
+      background: #080815;
+      border-radius: 4px;
+      box-shadow:
+        0 0 40px rgb(0 212 255 / 0.12),
+        0 0 80px rgb(0 212 255 / 0.06),
+        0 8px 32px rgb(0 0 0 / 0.5);
     }
     /* Desktop: fixed size */
     #board {
@@ -303,6 +343,7 @@
     #settings-btn[aria-expanded="true"] {
       background: var(--color-glass-active);
       border-color: var(--color-accent);
+      box-shadow: 0 0 12px rgb(0 212 255 / 0.35);
     }
     #settings-menu {
       position: absolute;
@@ -310,9 +351,10 @@
       left: 6px;
       z-index: 5;
       width: 38px;
-      background: var(--color-panel);
+      background: rgb(10 10 22 / 0.92);
+      backdrop-filter: blur(16px);
       display: none;
-      box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
+      box-shadow: 0 8px 32px rgb(0 0 0 / 0.5), 0 0 16px rgb(0 212 255 / 0.1);
     }
     #settings-menu.open {
       display: block;
@@ -347,8 +389,8 @@
       border-bottom-color: var(--color-accent);
     }
     .settings-separator {
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--color-border-light), transparent);
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgb(0 212 255 / 0.3), transparent);
     }
 
     .submenu-wrapper { position: relative; }
@@ -360,11 +402,12 @@
       display: none;
       width: auto;
       min-width: 0;
-      background: var(--color-panel);
+      background: rgb(10 10 22 / 0.95);
+      backdrop-filter: blur(16px);
       border: 1px solid var(--color-border-light);
-      border-radius: 6px;
+      border-radius: 10px;
       padding: 6px 0;
-      box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
+      box-shadow: 0 8px 32px rgb(0 0 0 / 0.5), 0 0 16px rgb(0 212 255 / 0.08);
     }
     #lang-submenu {
       max-height: 240px;
@@ -458,56 +501,82 @@
     .overlay {
       position: absolute;
       inset: 0;
-      background: var(--color-overlay);
+      background: rgb(5 5 18 / 0.78);
+      backdrop-filter: blur(20px);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
       z-index: 3;
       border-radius: 4px;
+      animation: fadeInUp 200ms ease-out both;
     }
     .hidden { display: none !important; }
     .overlay-title {
       color: var(--color-accent);
-      font-size: 32px;
+      font-size: 34px;
       font-weight: bold;
-      letter-spacing: 3px;
+      letter-spacing: 4px;
       line-height: 1;
       text-align: center;
+      text-shadow: 0 0 20px rgb(0 212 255 / 0.8), 0 0 40px rgb(0 212 255 / 0.4);
     }
     .overlay-score {
-      color: var(--color-text);
-      font-size: 16px;
+      color: var(--color-dim);
+      font-size: 15px;
       line-height: 1;
       text-align: center;
     }
     .overlay-score b {
       color: var(--color-accent);
       font-size: 24px;
+      text-shadow: 0 0 10px rgb(0 212 255 / 0.5);
     }
     .overlay-btn {
-      background: var(--color-accent);
+      background: linear-gradient(135deg, #00d4ff, #09c);
       color: var(--color-overlay-btn-text);
       border: none;
-      padding: 10px 28px;
+      padding: 11px 28px;
       font-size: 14px;
       font-weight: bold;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       min-width: 160px;
       line-height: 1.4;
       touch-action: manipulation;
+      box-shadow: 0 0 20px rgb(0 212 255 / 0.35), 0 4px 12px rgb(0 0 0 / 0.3);
+      transition: transform 100ms ease, box-shadow 100ms ease;
     }
-    .overlay-btn:active { background: var(--color-accent-dark); }
+    .overlay-btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 0 12px rgb(0 212 255 / 0.5);
+    }
+    @media (hover: hover) {
+      .overlay-btn:hover {
+        box-shadow: 0 0 28px rgb(0 212 255 / 0.5), 0 4px 12px rgb(0 0 0 / 0.3);
+        transform: scale(1.02);
+      }
+    }
     .overlay-btn.secondary {
       background: transparent;
       border: 1px solid var(--color-accent);
       color: var(--color-accent);
+      box-shadow: 0 0 12px rgb(0 212 255 / 0.15);
     }
-    .overlay-btn.secondary:active { background: var(--color-accent-glow); }
+    .overlay-btn.secondary:active {
+      background: var(--color-accent-glow);
+      transform: scale(0.97);
+    }
+    @media (hover: hover) {
+      .overlay-btn.secondary:hover {
+        background: var(--color-accent-glow);
+        box-shadow: 0 0 18px rgb(0 212 255 / 0.25);
+        transform: scale(1.02);
+      }
+    }
 
     /* --- Mobile --- */
     @media (width <= 768px) {
@@ -652,8 +721,16 @@
 
     /* --- Animations --- */
     @keyframes settingsMenuIn {
-      from { opacity: 0; transform: translateY(-4px); }
+      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bgPulse {
+      from { opacity: 0.7; }
+      to   { opacity: 1; }
     }
   </style>
 </head>
@@ -1893,28 +1970,73 @@ const ClearConfirm = createConfirm(
 
 // --- Rendering ---
 
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function lighten(hex, amount) {
+  const [r, g, b] = hexToRgb(hex);
+  const t = amount;
+  return `rgb(${Math.round(r + (255 - r) * t)},${Math.round(g + (255 - g) * t)},${Math.round(b + (255 - b) * t)})`;
+}
+
+function darken(hex, amount) {
+  const [r, g, b] = hexToRgb(hex);
+  const t = 1 - amount;
+  return `rgb(${Math.round(r * t)},${Math.round(g * t)},${Math.round(b * t)})`;
+}
+
 const Render = {
   // -- Primitives --
 
   drawBlock(context, x, y, colorId, size, ox = 0, oy = 0) {
     const px = x * size + ox, py = y * size + oy;
     const mono = Settings.blackWhiteEnabled;
-    const fill = mono ? '#ffffff' : COLORS[colorId];
-    const lightEdge = mono ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.25)';
-    const darkEdge = mono ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.25)';
-    const stroke = mono ? '#000000' : '#222';
+    const baseColor = mono ? '#ffffff' : COLORS[colorId];
+    const stroke = mono ? '#000000' : 'rgba(0,0,0,0.55)';
+    const r = Math.max(2, size * 0.12);
 
-    context.fillStyle = fill;
-    context.fillRect(px, py, size, size);
+    context.save();
+    if (context.roundRect) {
+      context.beginPath();
+      context.roundRect(px + 0.5, py + 0.5, size - 1, size - 1, r);
+      context.clip();
+    }
+
+    if (mono) {
+      context.fillStyle = baseColor;
+      context.fillRect(px, py, size, size);
+    } else {
+      const grad = context.createLinearGradient(px, py, px + size, py + size);
+      grad.addColorStop(0, lighten(baseColor, 0.28));
+      grad.addColorStop(0.5, baseColor);
+      grad.addColorStop(1, darken(baseColor, 0.28));
+      context.fillStyle = grad;
+      context.fillRect(px, py, size, size);
+    }
+
+    const lightEdge = mono ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.32)';
+    const darkEdge  = mono ? 'rgba(0,0,0,0.5)'       : 'rgba(0,0,0,0.38)';
+    const edgeW = Math.max(2, Math.floor(size * 0.1));
     context.fillStyle = lightEdge;
-    context.fillRect(px, py, size, 2);
-    context.fillRect(px, py, 2, size);
+    context.fillRect(px, py, size, edgeW);
+    context.fillRect(px, py, edgeW, size);
     context.fillStyle = darkEdge;
-    context.fillRect(px + size - 2, py, 2, size);
-    context.fillRect(px, py + size - 2, size, 2);
+    context.fillRect(px + size - edgeW, py, edgeW, size);
+    context.fillRect(px, py + size - edgeW, size, edgeW);
+
+    context.restore();
+
     context.strokeStyle = stroke;
     context.lineWidth = 1;
-    context.strokeRect(px, py, size, size);
+    if (context.roundRect) {
+      context.beginPath();
+      context.roundRect(px + 0.5, py + 0.5, size - 1, size - 1, r);
+      context.stroke();
+    } else {
+      context.strokeRect(px + 0.5, py + 0.5, size - 1, size - 1);
+    }
   },
 
   renderBlocks(ctx, blocks, ox, oy, color, size, px = 0, py = 0) {
@@ -1932,7 +2054,7 @@ const Render = {
 
   draw(rctx) {
     const { ctx, nextCtx, holdCtx, holdBtnCtx, holdBtnCanvas, BLOCK, VIEW_W, VIEW_H, NEXT_W, NEXT_H } = rctx;
-    ctx.fillStyle = '#0f0f23';
+    ctx.fillStyle = '#080815';
     ctx.fillRect(-4, -4, VIEW_W + 8, VIEW_H + 8);
     if (Settings.gridEnabled) this.drawGrid(ctx, BLOCK);
     this.renderBlocks(ctx, Game.grid, 0, 0, (x, y) => Game.grid[y][x], BLOCK);
@@ -1981,7 +2103,7 @@ const Render = {
 
   drawGrid(ctx, BLOCK) {
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.strokeStyle = 'rgba(0, 180, 220, 0.1)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 1; x < COLS; x++) {
@@ -1998,13 +2120,15 @@ const Render = {
 
   drawGhost(ctx, BLOCK) {
     const ghostY = Game.computeGhostY();
-    ctx.globalAlpha = 0.1;
+    ctx.globalAlpha = 0.12;
     this.renderBlocks(ctx, Game.current.blocks, Game.current.x, ghostY, Game.current.color, BLOCK);
     ctx.globalAlpha = 1;
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.lineWidth = Math.max(1.2, BLOCK / 16);
-    ctx.setLineDash([BLOCK * 0.2, BLOCK * 0.15]);
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.85)';
+    ctx.lineWidth = Math.max(1.5, BLOCK / 14);
+    ctx.setLineDash([BLOCK * 0.22, BLOCK * 0.14]);
+    ctx.shadowColor = 'rgba(0, 212, 255, 0.6)';
+    ctx.shadowBlur = 4;
     for (let y = 0; y < Game.current.blocks.length; y++) {
       for (let x = 0; x < Game.current.blocks[y].length; x++) {
         if (!Game.current.blocks[y][x]) continue;
@@ -2040,8 +2164,7 @@ const Render = {
   _holdSize: { w: 0, h: 0 },
 
   _drawPreview(ctx, W, H, blocks, color, alpha) {
-    ctx.fillStyle = '#16213e';
-    ctx.fillRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, H);
     if (!blocks) return;
     const bs = W >= 100 ? 22 : 14;
     const trimmed = this._trimBlocks(blocks);
