@@ -17,14 +17,12 @@
       --color-text: #e8eaf0;
       --color-muted: #7a8099;
       --color-dim: #b0b8cc;
-      --color-border: rgb(0 212 255 / 0.12);
       --color-border-mid: rgb(0 212 255 / 0.2);
       --color-border-light: rgb(0 212 255 / 0.3);
       --color-border-icon: rgb(0 212 255 / 0.25);
       --color-glass: rgb(13 13 30 / 0.75);
       --color-glass-active: rgb(0 212 255 / 0.12);
       --color-accent-glow: rgb(0 212 255 / 0.1);
-      --color-overlay: rgb(5 5 18 / 0.82);
       --color-kbd-top: rgb(255 255 255 / 0.06);
       --color-kbd-bot: rgb(0 0 0 / 0.3);
       --color-kbd-border: rgb(0 212 255 / 0.3);
@@ -1472,7 +1470,7 @@ const PieceGenerator = {
 
 const randInt = (() => {
   const cryptoSrc = globalThis.crypto;
-  if (!typeof cryptoSrc?.getRandomValues === 'function') {
+  if (typeof cryptoSrc?.getRandomValues !== 'function') {
     return max => Math.floor(Math.random() * max);
   }
   const buf = new Uint32Array(1);
@@ -1490,10 +1488,94 @@ function vibrate(ms) {
   if (navigator.vibrate) navigator.vibrate(ms);
 }
 
+// --- Board ---
+
+// Owns the playfield grid: collision queries, locking a piece into the
+// grid, and removing full rows. Knows nothing about scoring or effects.
+const Board = {
+  grid: null,
+
+  reset() {
+    this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  },
+
+  collides(b, x, y) {
+    for (let by = 0; by < b.length; by++)
+      for (let bx = 0; bx < b[by].length; bx++)
+        if (b[by][bx]) {
+          const nx = x + bx;
+          const ny = y + by;
+          if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+          if (ny >= 0 && this.grid[ny][nx]) return true;
+        }
+    return false;
+  },
+
+  // Writes a piece into the grid. Returns false (locked out) if any filled
+  // cell would land above the top row, leaving the grid untouched from that
+  // point on, matching the original abort-on-first-out-of-bounds behavior.
+  lockPiece(blocks, x, y, color) {
+    for (let by = 0; by < blocks.length; by++)
+      for (let bx = 0; bx < blocks[by].length; bx++)
+        if (blocks[by][bx]) {
+          const ny = y + by;
+          if (ny < 0) return false;
+          this.grid[ny][x + bx] = color;
+        }
+    return true;
+  },
+
+  // Removes every full row and returns how many were cleared plus their
+  // original positions/colors (for effects). Mutates the grid in place.
+  clearFullRows() {
+    let cleared = 0;
+    const clearedRowData = [];
+    for (let y = ROWS - 1; y >= 0; y--) {
+      if (this.grid[y].every(c => c !== 0)) {
+        clearedRowData.push({ y, colors: [...this.grid[y]] });
+        this.grid.splice(y, 1);
+        this.grid.unshift(Array(COLS).fill(0));
+        cleared++;
+        y++;
+      }
+    }
+    return { cleared, clearedRowData };
+  },
+};
+
+// --- AutoRepeat ---
+
+// Owns DAS/ARR horizontal auto-repeat timing, a distinct concern from the
+// game rules. Delegates the actual move to Game.
+const AutoRepeat = {
+  dir: 0,
+  _dasTimer: null,
+  _arrTimer: null,
+
+  start(dir) {
+    if (this.dir === dir) return;
+    this.stop();
+    this.dir = dir;
+    Game.move(dir);
+    this._dasTimer = setTimeout(() => {
+      this._arrTimer = setInterval(() => {
+        if (!Game.paused && !Game.gameOver && Game.current) Game.move(dir);
+      }, ARR_RATE);
+    }, DAS_DELAY);
+  },
+
+  stop() {
+    if (this._dasTimer) clearTimeout(this._dasTimer);
+    if (this._arrTimer) clearInterval(this._arrTimer);
+    this._dasTimer = null;
+    this._arrTimer = null;
+    this.dir = 0;
+  },
+};
+
 const Game = {
   // -- State --
 
-  grid: null,
   score: 0, level: 1, lines: 0,
   paused: false, gameOver: false,
   current: null, next: null,
@@ -1501,9 +1583,13 @@ const Game = {
   holdUsed: false,
   dropCounter: 0, dropInterval: 1000,
   softDropActive: false, suppressSoftDrop: false,
-  lockTimer: null, dasTimer: null, arrTimer: null, dasDir: 0,
+  lockTimer: null,
   _ghostY: 0,
   _ghostDirty: true,
+
+  // Convenience accessor so existing collaborators (e.g. Render) keep
+  // reading the playfield through Game while Board owns the data.
+  get grid() { return Board.grid; },
 
   // -- Rotation --
 
@@ -1512,7 +1598,8 @@ const Game = {
     const r = Array.from({ length: N }, () => Array(N).fill(0));
     for (let y = 0; y < N; y++)
       for (let x = 0; x < N; x++)
-        cw ? r[x][N - 1 - y] = blocks[y][x] : r[N - 1 - x][y] = blocks[y][x];
+        if (cw) r[x][N - 1 - y] = blocks[y][x];
+        else r[N - 1 - x][y] = blocks[y][x];
     return r;
   },
 
@@ -1540,15 +1627,7 @@ const Game = {
   // -- Collision --
 
   collidesAt(b, x, y) {
-    for (let by = 0; by < b.length; by++)
-      for (let bx = 0; bx < b[by].length; bx++)
-        if (b[by][bx]) {
-          const nx = x + bx;
-          const ny = y + by;
-          if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
-          if (ny >= 0 && this.grid[ny][nx]) return true;
-        }
-    return false;
+    return Board.collides(b, x, y);
   },
 
   // -- Movement --
@@ -1594,9 +1673,7 @@ const Game = {
     this.suppressSoftDrop = false;
     if (this.heldPiece === null) {
       this.heldPiece = currentType;
-      this.current = this.next;
-      this.next = PieceGenerator.next();
-      View.updateNextHeader();
+      this.spawnNext();
     } else {
       const swapType = this.heldPiece;
       this.heldPiece = currentType;
@@ -1619,6 +1696,12 @@ const Game = {
     this.tryLock();
   },
 
+  spawnNext() {
+    this.current = this.next;
+    this.next = PieceGenerator.next();
+    View.updateNextHeader();
+  },
+
   // -- Locking --
 
   tryLock() {
@@ -1637,18 +1720,13 @@ const Game = {
 
   lock() {
     this.resetLock();
-    for (let y = 0; y < this.current.blocks.length; y++)
-      for (let x = 0; x < this.current.blocks[y].length; x++)
-        if (this.current.blocks[y][x]) {
-          const ny = this.current.y + y;
-          if (ny < 0) { this.endGame(); return; }
-          this.grid[ny][this.current.x + x] = this.current.color;
-        }
+    if (!Board.lockPiece(this.current.blocks, this.current.x, this.current.y, this.current.color)) {
+      this.endGame();
+      return;
+    }
     this.clearLines();
     this.holdUsed = false;
-    this.current = this.next;
-    this.next = PieceGenerator.next();
-    View.updateNextHeader();
+    this.spawnNext();
     this.dropCounter = 0;
     this.invalidateGhost();
     // Suppress initial drop tick when soft-drop was held across lock
@@ -1659,17 +1737,7 @@ const Game = {
   // -- Scoring --
 
   clearLines() {
-    let cleared = 0;
-    const clearedRowData = [];
-    for (let y = ROWS - 1; y >= 0; y--) {
-      if (this.grid[y].every(c => c !== 0)) {
-        clearedRowData.push({ y: y, colors: [...this.grid[y]] });
-        this.grid.splice(y, 1);
-        this.grid.unshift(Array(COLS).fill(0));
-        cleared++;
-        y++;
-      }
-    }
+    const { cleared, clearedRowData } = Board.clearFullRows();
 
     if (cleared < 1) return;
     Fx.onLinesCleared(clearedRowData, cleared);
@@ -1703,23 +1771,15 @@ const Game = {
   // -- DAS / ARR --
 
   startDAS(dir) {
-    if (this.dasDir === dir) return;
-    this.stopDAS();
-    this.dasDir = dir;
-    this.move(dir);
-    this.dasTimer = setTimeout(() => {
-      this.arrTimer = setInterval(() => {
-        if (!this.paused && !this.gameOver && this.current) this.move(dir);
-      }, ARR_RATE);
-    }, DAS_DELAY);
+    AutoRepeat.start(dir);
   },
 
   stopDAS() {
-    if (this.dasTimer) clearTimeout(this.dasTimer);
-    if (this.arrTimer) clearInterval(this.arrTimer);
-    this.dasTimer = null;
-    this.arrTimer = null;
-    this.dasDir = 0;
+    AutoRepeat.stop();
+  },
+
+  get dasDir() {
+    return AutoRepeat.dir;
   },
 
   // -- Lifecycle --
@@ -1727,7 +1787,7 @@ const Game = {
   resetGame() {
     this.stopDAS();
     this.resetLock();
-    this.grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    Board.reset();
     this.score = 0; this.level = 1; this.lines = 0;
     this.paused = false; this.gameOver = false;
     this.dropInterval = 1000;
@@ -1747,7 +1807,7 @@ const Game = {
   tick(dt) {
     if (this.paused || this.gameOver) return;
     this.dropCounter += dt;
-    if (this.suppressSoftDrop) this.suppressSoftDrop = false;
+    this.suppressSoftDrop = false;
     if (this.dropCounter > this.dropInterval) this.drop();
   },
 };
@@ -1820,7 +1880,7 @@ const Particles = {
     ctx.save();
     for (const f of this.flashes) {
       const a = (f.life / f.maxLife) * f.intensity;
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
+      ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
       ctx.fillRect(0, f.y * BLOCK, COLS * BLOCK, BLOCK);
     }
     for (const p of this.particles) {
@@ -1935,12 +1995,12 @@ const Fx = {
 const createConfirm = (i18nKey, onConfirm, onApply, onRevert) => ({
   _btn: null,
   _meta: null,
-  isPending(c) { return this._btn === c; },
-  request(c) {
+  isPending(btn) { return this._btn === btn; },
+  request(btn) {
     this.cancel();
-    this._btn = c;
-    c.textContent = I18n.t(i18nKey);
-    this._meta = onApply(c);
+    this._btn = btn;
+    btn.textContent = I18n.t(i18nKey);
+    this._meta = onApply(btn);
     Shake.trigger(16);
   },
   confirm() { this.cancel(); onConfirm(); },
@@ -1957,8 +2017,8 @@ const createConfirm = (i18nKey, onConfirm, onApply, onRevert) => ({
 const RestartConfirm = createConfirm(
   'confirmRestart',
   () => Lifecycle.resetGame(),
-  (btn) => { const c = btn.className; btn.classList.remove('secondary'); return c; },
-  (btn, c) => { btn.className = c; }
+  (btn) => { const savedClass = btn.className; btn.classList.remove('secondary'); return savedClass; },
+  (btn, savedClass) => { btn.className = savedClass; }
 );
 
 const ClearConfirm = createConfirm(
@@ -1977,14 +2037,13 @@ function hexToRgb(hex) {
 
 function lighten(hex, amount) {
   const [r, g, b] = hexToRgb(hex);
-  const t = amount;
-  return `rgb(${Math.round(r + (255 - r) * t)},${Math.round(g + (255 - g) * t)},${Math.round(b + (255 - b) * t)})`;
+  return `rgb(${Math.round(r + (255 - r) * amount)}, ${Math.round(g + (255 - g) * amount)}, ${Math.round(b + (255 - b) * amount)})`;
 }
 
 function darken(hex, amount) {
   const [r, g, b] = hexToRgb(hex);
   const t = 1 - amount;
-  return `rgb(${Math.round(r * t)},${Math.round(g * t)},${Math.round(b * t)})`;
+  return `rgb(${Math.round(r * t)}, ${Math.round(g * t)}, ${Math.round(b * t)})`;
 }
 
 const Render = {
@@ -1994,13 +2053,16 @@ const Render = {
     const px = x * size + ox, py = y * size + oy;
     const mono = Settings.blackWhiteEnabled;
     const baseColor = mono ? '#ffffff' : COLORS[colorId];
-    const stroke = mono ? '#000000' : 'rgba(0,0,0,0.55)';
+    const stroke = mono ? '#000000' : 'rgba(0, 0, 0, 0.55)';
     const r = Math.max(2, size * 0.12);
+    const traceRoundRect = () => {
+      context.beginPath();
+      context.roundRect(px + 0.5, py + 0.5, size - 1, size - 1, r);
+    };
 
     context.save();
     if (context.roundRect) {
-      context.beginPath();
-      context.roundRect(px + 0.5, py + 0.5, size - 1, size - 1, r);
+      traceRoundRect();
       context.clip();
     }
 
@@ -2016,8 +2078,8 @@ const Render = {
       context.fillRect(px, py, size, size);
     }
 
-    const lightEdge = mono ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.32)';
-    const darkEdge  = mono ? 'rgba(0,0,0,0.5)'       : 'rgba(0,0,0,0.38)';
+    const lightEdge = mono ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.32)';
+    const darkEdge  = mono ? 'rgba(0, 0, 0, 0.5)'       : 'rgba(0, 0, 0, 0.38)';
     const edgeW = Math.max(2, Math.floor(size * 0.1));
     context.fillStyle = lightEdge;
     context.fillRect(px, py, size, edgeW);
@@ -2031,8 +2093,7 @@ const Render = {
     context.strokeStyle = stroke;
     context.lineWidth = 1;
     if (context.roundRect) {
-      context.beginPath();
-      context.roundRect(px + 0.5, py + 0.5, size - 1, size - 1, r);
+      traceRoundRect();
       context.stroke();
     } else {
       context.strokeRect(px + 0.5, py + 0.5, size - 1, size - 1);
@@ -2236,7 +2297,7 @@ const View = {
 
   initRefs() {
     // Canvases
-    const _initCanvas = (id, cP, xP) => { this[cP] = document.getElementById(id); this[xP] = this[cP].getContext('2d'); };
+    const _initCanvas = (id, canvasProp, ctxProp) => { this[canvasProp] = document.getElementById(id); this[ctxProp] = this[canvasProp].getContext('2d'); };
     _initCanvas('board', '_canvas', '_ctx');
     _initCanvas('next-canvas', '_nextCanvas', '_nextCtx');
     _initCanvas('hold-canvas', '_holdCanvas', '_holdCtx');
@@ -2703,20 +2764,20 @@ const Input = {
   // -- Mobile helpers --
 
   _bindHold(button, action, isSoft = false) {
-    let t1 = null, t2 = null, pid = null;
+    let dasTimer = null, arrTimer = null, pointerId = null;
     const start = e => {
       e.preventDefault();
       if (Game.paused || Game.gameOver) return;
-      pid = e.pointerId;
-      try { button.setPointerCapture(pid); } catch (_) {}
+      pointerId = e.pointerId;
+      try { button.setPointerCapture(pointerId); } catch (_) {}
       if (isSoft) {
         Game.softDropActive = true;
         if (!Game.suppressSoftDrop) Game.softDrop();
       } else {
         action();
       }
-      t1 = setTimeout(() => {
-        t2 = setInterval(() => {
+      dasTimer = setTimeout(() => {
+        arrTimer = setInterval(() => {
           if (Game.paused || Game.gameOver) return;
           if (isSoft && Game.suppressSoftDrop) return;
           action();
@@ -2724,10 +2785,10 @@ const Input = {
       }, DAS_DELAY);
     };
     const end = () => {
-      if (t1) { clearTimeout(t1); t1 = null; }
-      if (t2) { clearInterval(t2); t2 = null; }
+      if (dasTimer) { clearTimeout(dasTimer); dasTimer = null; }
+      if (arrTimer) { clearInterval(arrTimer); arrTimer = null; }
       if (isSoft) { Game.softDropActive = false; Game.suppressSoftDrop = false; }
-      pid = null;
+      pointerId = null;
     };
     button.addEventListener('pointerdown', start);
     button.addEventListener('pointerup', end);
@@ -2938,7 +2999,7 @@ const Lifecycle = {
       NEXT_H: View.NEXT_H,
     });
     if (Game.gameOver) return;
-    this._rafId = requestAnimationFrame(t2 => this._loop(t2));
+    this._rafId = requestAnimationFrame(t => this._loop(t));
   },
 
   setPaused(v) {
