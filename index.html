@@ -155,7 +155,7 @@
         box-shadow: 0 0 10px rgb(0 212 255 / 0.3);
       }
     }
-    /* Dim icon buttons during active play; restore full opacity when no play */
+    /* Dim icon buttons during play, full opacity otherwise */
     body:not(.paused):not(.game-over) .icon-btn { opacity: 0.65; color: rgb(0 212 255 / 0.7); }
     body:not(.paused):not(.game-over) .icon-btn:focus-visible,
     body:not(.paused):not(.game-over) .icon-btn:active { opacity: 1; color: var(--color-accent); }
@@ -699,7 +699,7 @@
       .side.left h3 { font-size: 10px; }
       #hold-canvas { width: 60px !important; height: 30px !important; margin-top: 4px; }
       .game-wrapper { order: 1; }
-      /* Mobile landscape: fit within remaining space */
+      /* Mobile landscape: fit remaining space */
       #board {
         width: calc((100vw - 220px) / 2);
         aspect-ratio: 10 / 20;
@@ -1366,9 +1366,8 @@ document.documentElement.classList.remove('i18n-loading');
 const COLS = 10, ROWS = 20;
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
-// SRS kick tables (Guideline): [dx, dy] pairs, tried in order.
-// 5 kicks per transition. All 8 transitions explicit.
-// For J/L/S/T/Z pieces
+// SRS kick tables (Guideline). 5 kicks per transition, tried in order.
+// J/L/S/T/Z pieces
 const SRS_KICK_JLSTZ = {
   '0>1': [[ 0, 0], [-1, 0], [-1, +1], [ 0, -2], [-1, -2]],
   '1>0': [[ 0, 0], [+1, 0], [+1, -1], [ 0, +2], [+1, +2]],
@@ -1379,7 +1378,7 @@ const SRS_KICK_JLSTZ = {
   '3>0': [[ 0, 0], [-1, 0], [-1, -1], [ 0, +2], [-1, +2]],
   '0>3': [[ 0, 0], [+1, 0], [+1, +1], [ 0, -2], [+1, -2]]
 };
-// For I piece
+// I piece
 const SRS_KICK_I = {
   '0>1': [[ 0, 0], [-2, 0], [+1, 0], [-2, -1], [+1, +2]],
   '1>0': [[ 0, 0], [+2, 0], [-1, 0], [+2, +1], [-1, -2]],
@@ -1490,8 +1489,7 @@ function vibrate(ms) {
 
 // --- Board ---
 
-// Owns the playfield grid: collision queries, locking a piece into the
-// grid, and removing full rows. Knows nothing about scoring or effects.
+// Owns the playfield grid: collisions, locking, row clearing.
 const Board = {
   grid: null,
 
@@ -1511,9 +1509,8 @@ const Board = {
     return false;
   },
 
-  // Writes a piece into the grid. Returns false (locked out) if any filled
-  // cell would land above the top row, leaving the grid untouched from that
-  // point on, matching the original abort-on-first-out-of-bounds behavior.
+  // Locks a piece into the grid. Returns false if any cell lands above
+  // the top row (lock-out), aborting on the first out-of-bounds cell.
   lockPiece(blocks, x, y, color) {
     for (let by = 0; by < blocks.length; by++)
       for (let bx = 0; bx < blocks[by].length; bx++)
@@ -1525,8 +1522,6 @@ const Board = {
     return true;
   },
 
-  // Removes every full row and returns how many were cleared plus their
-  // original positions/colors (for effects). Mutates the grid in place.
   clearFullRows() {
     let cleared = 0;
     const clearedRowData = [];
@@ -1545,8 +1540,7 @@ const Board = {
 
 // --- AutoRepeat ---
 
-// Owns DAS/ARR horizontal auto-repeat timing, a distinct concern from the
-// game rules. Delegates the actual move to Game.
+// Owns DAS/ARR horizontal auto-repeat timing. Delegates moves to Game.
 const AutoRepeat = {
   dir: 0,
   _dasTimer: null,
@@ -1574,7 +1568,7 @@ const AutoRepeat = {
 };
 
 const Game = {
-  // -- State --
+  // --- State ---
 
   score: 0, level: 1, lines: 0,
   paused: false, gameOver: false,
@@ -1587,11 +1581,9 @@ const Game = {
   _ghostY: 0,
   _ghostDirty: true,
 
-  // Convenience accessor so existing collaborators (e.g. Render) keep
-  // reading the playfield through Game while Board owns the data.
   get grid() { return Board.grid; },
 
-  // -- Rotation --
+  // --- Rotation ---
 
   rotate(blocks, cw) {
     const N = blocks.length;
@@ -1624,13 +1616,13 @@ const Game = {
     }
   },
 
-  // -- Collision --
+  // --- Collision ---
 
   collidesAt(b, x, y) {
     return Board.collides(b, x, y);
   },
 
-  // -- Movement --
+  // --- Movement ---
 
   drop() {
     this.tryLock();
@@ -1702,7 +1694,7 @@ const Game = {
     View.updateNextHeader();
   },
 
-  // -- Locking --
+  // --- Locking ---
 
   tryLock() {
     if (this.lockTimer || !this.current) return;
@@ -1729,12 +1721,12 @@ const Game = {
     this.spawnNext();
     this.dropCounter = 0;
     this.invalidateGhost();
-    // Suppress initial drop tick when soft-drop was held across lock
+    // Suppress initial drop tick if soft-drop held across lock
     if (this.softDropActive) this.suppressSoftDrop = true;
     if (this.collidesAt(this.current.blocks, this.current.x, this.current.y)) this.endGame();
   },
 
-  // -- Scoring --
+  // --- Scoring ---
 
   clearLines() {
     const { cleared, clearedRowData } = Board.clearFullRows();
@@ -1748,7 +1740,7 @@ const Game = {
     vibrate(cleared * 15);
   },
 
-  // -- Game flow --
+  // --- Game flow ---
 
   endGame() {
     this.gameOver = true;
@@ -1768,7 +1760,7 @@ const Game = {
     this._ghostDirty = true;
   },
 
-  // -- DAS / ARR --
+  // --- DAS / ARR ---
 
   startDAS(dir) {
     AutoRepeat.start(dir);
@@ -1782,7 +1774,7 @@ const Game = {
     return AutoRepeat.dir;
   },
 
-  // -- Lifecycle --
+  // --- Lifecycle ---
 
   resetGame() {
     this.stopDAS();
@@ -2047,7 +2039,7 @@ function darken(hex, amount) {
 }
 
 const Render = {
-  // -- Primitives --
+  // --- Primitives ---
 
   drawBlock(context, x, y, colorId, size, ox = 0, oy = 0) {
     const px = x * size + ox, py = y * size + oy;
@@ -2111,7 +2103,7 @@ const Render = {
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
   },
 
-  // -- Pipeline --
+  // --- Pipeline ---
 
   draw(rctx) {
     const { ctx, nextCtx, holdCtx, holdBtnCtx, holdBtnCanvas, BLOCK, VIEW_W, VIEW_H, NEXT_W, NEXT_H } = rctx;
@@ -2293,7 +2285,7 @@ const View = {
     this.initLangOptions();
   },
 
-  // -- DOM refs --
+  // --- DOM refs ---
 
   initRefs() {
     // Canvases
@@ -2343,7 +2335,7 @@ const View = {
     this._overPrevVal = document.getElementById('over-prev');
   },
 
-  // -- UI construction --
+  // --- UI construction ---
 
   initLangOptions() {
     this._langSubmenu.innerHTML = '';
@@ -2365,7 +2357,7 @@ const View = {
     this._langOptions = this._langSubmenu.querySelectorAll('.lang-option');
   },
 
-  // -- Stats --
+  // --- Stats ---
 
   setStats() {
     const stats = { score: Game.score, level: Game.level, lines: Game.lines };
@@ -2386,7 +2378,7 @@ const View = {
     }
   },
 
-  // -- Shake --
+  // --- Shake ---
 
   _shakeX: 0,
   _shakeY: 0,
@@ -2410,7 +2402,7 @@ const View = {
     this._overlayOver.classList.toggle('hidden', !Game.gameOver);
   },
 
-  // -- Overlays --
+  // --- Overlays ---
 
   renderGameOver(state, score, prevBest) {
     const hide = el => el.classList.add('hidden');
@@ -2437,7 +2429,7 @@ const View = {
     }
   },
 
-  // -- Settings menu --
+  // --- Settings menu ---
 
   closeAllSubmenus() {
     this.closeLangSubmenu();
@@ -2460,7 +2452,7 @@ const View = {
   focusGhostToggle()  { this._ghostToggle.focus(); },
   focusLangToggle()   { this._langToggle.focus(); },
 
-  // -- Language submenu --
+  // --- Language submenu ---
 
   _closeSubmenu(submenuEl, toggleEl, focusFn, preHook) {
     if (!submenuEl.classList.contains('open')) return;
@@ -2483,7 +2475,7 @@ const View = {
     this._langToggle.querySelector('.label').textContent = `${label}: ${name}`;
   },
 
-  // -- Ranking submenu --
+  // --- Ranking submenu ---
 
   closeRankingSubmenu() { this._closeSubmenu(this._rankingSubmenu, this._rankingToggle, () => this._rankingToggle.focus(), () => ClearConfirm.cancel()); },
 
@@ -2529,18 +2521,18 @@ const View = {
     sub.appendChild(clear);
   },
 
-  // -- Indicators --
+  // --- Indicators ---
 
   _setIndicator(indicatorEl, toggleEl, on) {
     indicatorEl.classList.toggle('on', on);
     toggleEl.setAttribute('aria-checked', on ? 'true' : 'false');
   },
 
-  // -- Resize --
+  // --- Resize ---
 
   resize() {
     const ratio = window.devicePixelRatio;
-    // Clear inline styles so CSS can apply correct size for current viewport
+    // Clear inline size so CSS applies the current viewport size
     this._canvas.style.width = '';
     this._canvas.style.height = '';
     const rect = this._canvas.getBoundingClientRect();
@@ -2549,7 +2541,7 @@ const View = {
     this.VIEW_H = this.BLOCK * ROWS;
     this._canvas.style.width = `${this.VIEW_W}px`;
     this._canvas.style.height = `${this.VIEW_H}px`;
-    // Read actual size after CSS constraints (max-height, etc) are applied
+    // Re-read size after CSS constraints (max-height, etc)
     const finalRect = this._canvas.getBoundingClientRect();
     this._canvas.width  = Math.floor(finalRect.width * ratio);
     this._canvas.height = Math.floor(finalRect.height * ratio);
@@ -2649,7 +2641,7 @@ const Input = {
     this._bindVisibility();
   },
 
-  // -- Outside click --
+  // --- Outside click ---
 
   _bindOutsideClick() {
     document.addEventListener('click', e => {
@@ -2677,7 +2669,7 @@ const Input = {
     closeFn();
   },
 
-  // -- Keyboard --
+  // --- Keyboard ---
 
   _handleGameOverKey(key, menuOpen) {
     if (!menuOpen && (key === 'r' || key === 'enter')) {
@@ -2761,7 +2753,7 @@ const Input = {
     });
   },
 
-  // -- Mobile helpers --
+  // --- Mobile helpers ---
 
   _bindHold(button, action, isSoft = false) {
     let dasTimer = null, arrTimer = null, pointerId = null;
@@ -2806,7 +2798,7 @@ const Input = {
     button.addEventListener('contextmenu', e => e.preventDefault());
   },
 
-  // -- Mobile --
+  // --- Mobile ---
 
   _bindMobile() {
     const ACTIONS = {
@@ -2858,7 +2850,7 @@ const Input = {
     });
   },
 
-  // -- Settings --
+  // --- Settings ---
 
   _bindSettings() {
     View._settingsBtn.addEventListener('click', () => {
@@ -2927,7 +2919,7 @@ const Input = {
     });
   },
 
-  // -- Visibility --
+  // --- Visibility ---
 
   _bindVisibility() {
     document.addEventListener('visibilitychange', () => {
