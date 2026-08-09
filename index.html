@@ -673,49 +673,37 @@
       .overlay-title { font-size: 22px; letter-spacing: 2px; }
       .overlay-btn { padding: 12px 24px; font-size: 14px; width: min(260px, calc(100% - 32px)); }
     }
-    @media (width <= 768px) and (orientation: landscape) {
-      body { padding: 4px; }
-      .wrapper {
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-        justify-content: center;
-      }
-      .side {
-        order: 2;
-        flex-direction: column;
-        width: auto;
-        max-width: none;
-        gap: 6px;
-      }
-      .side.left {
-        order: 0;
-        flex-direction: column;
-        width: auto;
-        gap: 6px;
-        display: none !important;
-      }
-      .side.left .panel { padding: 4px 8px; min-width: 90px; }
-      .side.left h3 { font-size: 10px; }
-      #hold-canvas { width: 60px !important; height: 30px !important; margin-top: 4px; }
-      .game-wrapper { order: 1; }
-      /* Mobile landscape: fit remaining space */
-      #board {
-        width: calc((100vw - 220px) / 2);
-        aspect-ratio: 10 / 20;
-      }
-      :root { --btn-size: 42px; }
-      .controls-mobile {
-        order: 3;
-        grid-template-columns: repeat(3, var(--btn-size));
-        grid-template-rows: repeat(2, var(--btn-size));
-        gap: 4px;
-      }
-      #hard-drop-btn { left: auto; }
-      .panel { padding: 4px 8px; min-width: 90px; }
-      .panel h3 { font-size: 10px; }
-      .panel .value { font-size: 16px; }
+    /* --- Landscape hint --- */
+    #overlay-rotate {
+      position: fixed;
+      inset: 0;
+      background: rgb(5 5 18 / 0.92);
+      backdrop-filter: blur(20px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 100;
     }
+    .rotate-icon {
+      font-size: 48px;
+      color: var(--color-accent);
+      animation: rotateHint 2s ease-in-out infinite;
+    }
+    .rotate-text {
+      color: var(--color-dim);
+      font-size: 16px;
+    }
+    @keyframes rotateHint {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(90deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rotate-icon { animation: none; }
+    }
+    .landscape-suspended .wrapper { display: none; }
+    .landscape-suspended #overlay-rotate { display: flex; }
 
     /* --- Animations --- */
     @keyframes settingsMenuIn {
@@ -840,6 +828,10 @@
       <button class="key right" data-action="right" type="button"><i class="fa-solid fa-right-long" aria-hidden="true"></i></button>
     </div>
   </div>
+  <div id="overlay-rotate" role="alert">
+    <i class="fa-solid fa-mobile-screen rotate-icon" aria-hidden="true"></i>
+    <div class="rotate-text" data-i18n="rotateDevice">Rotate your device</div>
+  </div>
 
   <script>
 (() => {
@@ -910,6 +902,7 @@ const I18n = {
       clear: 'Clear',
       confirmClear: 'Confirm Clear',
       noRecords: 'No records yet',
+      rotateDevice: 'Rotate your device',
       pageTitle: 'Tetris'
     }
   },
@@ -949,6 +942,7 @@ const I18n = {
       clear: 'Очистить',
       confirmClear: 'Подтвердить очистку',
       noRecords: 'Пока пусто',
+      rotateDevice: 'Переверни устройство',
       pageTitle: 'Тетрис'
     }
   },
@@ -988,6 +982,7 @@ const I18n = {
       clear: 'Изчисти',
       confirmClear: 'Потвърди изчистване',
       noRecords: 'Все още няма записи',
+      rotateDevice: 'Завъртете устройството',
       pageTitle: 'Тетрис'
     }
   },
@@ -1027,6 +1022,7 @@ const I18n = {
       clear: 'Șterge',
       confirmClear: 'Confirmă ștergerea',
       noRecords: 'Nicio înregistrare încă',
+      rotateDevice: 'Rotati dispozitivul',
       pageTitle: 'Tetris'
     }
   },
@@ -1066,6 +1062,7 @@ const I18n = {
       clear: 'Effacer',
       confirmClear: 'Confirmer l\'effacement',
       noRecords: 'Pas encore de records',
+      rotateDevice: 'Pivotez votre appareil',
       pageTitle: 'Tetris'
     }
   },
@@ -1105,6 +1102,7 @@ const I18n = {
       clear: 'Borrar',
       confirmClear: 'Confirmar borrado',
       noRecords: 'Sin registros aún',
+      rotateDevice: 'Gira tu dispositivo',
       pageTitle: 'Tetris'
     }
   },
@@ -1144,6 +1142,7 @@ const I18n = {
       clear: 'Viŝi',
       confirmClear: 'Konfirmi viŝadon',
       noRecords: 'Neniu rekordo ankoraŭ',
+      rotateDevice: 'Turnu via aparato',
       pageTitle: 'Tetriso'
     }
   },
@@ -1183,6 +1182,7 @@ const I18n = {
       clear: 'Clarar',
       confirmClear: 'Confirmar clarar',
       noRecords: 'Nulle recordas ancora',
+      rotateDevice: 'Rota tu apparato',
       pageTitle: 'Tetris'
     }
   },
@@ -1222,6 +1222,7 @@ const I18n = {
       clear: 'クリア',
       confirmClear: 'クリア確認',
       noRecords: '記録なし',
+      rotateDevice: 'デバイスを回転してください',
       pageTitle: 'テトリス'
     }
   },
@@ -1261,6 +1262,7 @@ const I18n = {
       clear: 'weka',
       confirmClear: 'o weka',
       noRecords: 'ala li lon',
+      rotateDevice: 'lon e ilo',
       pageTitle: 'tetro'
     }
   },
@@ -1300,6 +1302,7 @@ const I18n = {
       clear: '清除',
       confirmClear: '确认清除',
       noRecords: '暂无记录',
+      rotateDevice: '请旋转设备',
       pageTitle: '俄罗斯方块'
     }
   },
@@ -1564,6 +1567,36 @@ const AutoRepeat = {
     this._dasTimer = null;
     this._arrTimer = null;
     this.dir = 0;
+  },
+};
+
+// --- LandscapeGuard ---
+
+// Owns landscape detection: matchMedia state, callbacks on transition.
+const LandscapeGuard = {
+  _mq: null,
+  _onSuspend: null,
+  _onResume: null,
+  _state: false,
+
+  init(onSuspend, onResume) {
+    this._onSuspend = onSuspend;
+    this._onResume = onResume;
+    this._mq = matchMedia('(height <= 600px) and (orientation: landscape) and (width <= 1200px)');
+    this._state = this._mq.matches;
+    this._transition(this._state);
+    this._mq.addEventListener('change', (e) => this._transition(e.matches));
+  },
+
+  resizeCheck() {
+    const m = this._mq.matches;
+    if (m !== this._state) this._transition(m);
+  },
+
+  _transition(isLandscape) {
+    this._state = isLandscape;
+    if (isLandscape) this._onSuspend();
+    else this._onResume();
   },
 };
 
@@ -2394,6 +2427,9 @@ const View = {
     document.body.classList.toggle('paused', Game.paused);
     document.body.classList.toggle('game-over', Game.gameOver);
   },
+  setLandscapeSuspended(on) {
+    document.body.classList.toggle('landscape-suspended', on);
+  },
   updatePauseLabel() {
     this._pauseBtn.setAttribute('aria-label', I18n.t(Game.paused ? 'resumeLabel' : 'pause'));
   },
@@ -2948,8 +2984,12 @@ const Lifecycle = {
     View.updateLangToggleLabel();
     View.resize();
     Input.init();
-    window.addEventListener('resize', () => View.resize());
-    window.addEventListener('orientationchange', () => setTimeout(() => View.resize(), 100));
+    window.addEventListener('resize', () => { View.resize(); LandscapeGuard.resizeCheck(); });
+    window.addEventListener('orientationchange', () => setTimeout(() => { View.resize(); LandscapeGuard.resizeCheck(); }, 100));
+    LandscapeGuard.init(
+      () => { cancelAnimationFrame(this._rafId); this._rafId = 0; View.setLandscapeSuspended(true); },
+      () => { View.setLandscapeSuspended(false); requestAnimationFrame(() => { View.resize(); if (!Game.gameOver) this.start(); }); }
+    );
     this.resetGame();
   },
 
