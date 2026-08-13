@@ -2249,6 +2249,11 @@ const Render = {
   _holdCache: null,
   _holdSize: { w: 0, h: 0 },
 
+  invalidatePreviewCaches() {
+    this._nextCache = null;
+    this._holdCache = null;
+  },
+
   _drawPreview(ctx, W, H, blocks, color, alpha) {
     ctx.clearRect(0, 0, W, H);
     if (!blocks) return;
@@ -2913,6 +2918,8 @@ const Input = {
         if (cfg.field === 'sevenBagEnabled') {
           PieceGenerator.sevenBag = Settings.sevenBagEnabled;
           View.updateNextHeader();
+        } else if (cfg.field === 'blackWhiteEnabled') {
+          Render.invalidatePreviewCaches();
         }
       });
     });
