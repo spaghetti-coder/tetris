@@ -1556,7 +1556,7 @@ const AutoRepeat = {
     Game.move(dir);
     this._dasTimer = setTimeout(() => {
       this._arrTimer = setInterval(() => {
-        if (!Game.paused && !Game.gameOver && Game.current) Game.move(dir);
+        if (Game.state === GameState.PLAYING && Game.current) Game.move(dir);
       }, ARR_RATE);
     }, DAS_DELAY);
   },
@@ -1600,11 +1600,18 @@ const LandscapeGuard = {
   },
 };
 
+// Game FSM: playing ⇄ paused, playing → over, over → playing (reset)
+const GameState = Object.freeze({
+  PLAYING: 'playing',
+  PAUSED: 'paused',
+  OVER: 'over',
+});
+
 const Game = {
   // --- State ---
 
   score: 0, level: 1, lines: 0,
-  paused: false, gameOver: false,
+  state: GameState.PLAYING,
   current: null, next: null,
   heldPiece: null,
   holdUsed: false,
@@ -1631,7 +1638,7 @@ const Game = {
   srsRotate(direction) {
     const p = this.current;
     if (!p || p.type === 'O') return;
-    this.resetLock();
+    this.exitLocking();
     const cw = direction === 1;
     const from = p.state;
     const to = cw ? (from + 1) % 4 : (from + 3) % 4;
@@ -1644,7 +1651,7 @@ const Game = {
       p.y += dy;
       p.state = to;
       this.invalidateGhost();
-      this.tryLock();
+      this.enterLocking();
       return;
     }
   },
@@ -1658,13 +1665,13 @@ const Game = {
   // --- Movement ---
 
   drop() {
-    this.tryLock();
     let moved = false;
     if (!this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
       this.current.y++;
       this.invalidateGhost();
-      this.resetLock();
       moved = true;
+    } else {
+      this.enterLocking();
     }
     this.dropCounter = 0;
     return moved;
@@ -1680,7 +1687,7 @@ const Game = {
       this.score += 2;
     }
     this.invalidateGhost();
-    this.resetLock();
+    this.exitLocking();
     Fx.onHardDrop();
     this.lock();
   },
@@ -1692,7 +1699,7 @@ const Game = {
     const heldY = this.current.y;
     const heldColor = this.current.color;
     const currentType = this.current.type;
-    this.resetLock();
+    this.exitLocking();
     this.stopDAS();
     this.softDropActive = false;
     this.suppressSoftDrop = false;
@@ -1717,8 +1724,7 @@ const Game = {
     if (this.collidesAt(this.current.blocks, this.current.x + dir, this.current.y)) return;
     this.current.x += dir;
     this.invalidateGhost();
-    this.resetLock();
-    this.tryLock();
+    this.syncLock();
   },
 
   spawnNext() {
@@ -1727,24 +1733,37 @@ const Game = {
     View.updateNextHeader();
   },
 
-  // --- Locking ---
+  // --- Lock FSM ---
+  // active ⇄ locking → locked. lockTimer: null = active, set = locking.
+  // Gravity enters locking on the tick that finds the piece grounded;
+  // moves/rotations re-evaluate immediately, a failed rotation drops out.
 
-  tryLock() {
+  enterLocking() {
     if (this.lockTimer || !this.current) return;
     if (this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1)) {
       this.lockTimer = setTimeout(() => {
         this.lockTimer = null;
-        if (!this.paused && !this.gameOver && this.current) this.lock();
+        if (this.state === GameState.PLAYING && this.current) this.lock();
       }, LOCK_DELAY);
     }
   },
 
-  resetLock() {
+  exitLocking() {
     if (this.lockTimer) { clearTimeout(this.lockTimer); this.lockTimer = null; }
   },
 
+  syncLock() {
+    if (this._isGrounded()) this.enterLocking();
+    else this.exitLocking();
+  },
+
+  _isGrounded() {
+    return Boolean(this.current) &&
+      this.collidesAt(this.current.blocks, this.current.x, this.current.y + 1);
+  },
+
   lock() {
-    this.resetLock();
+    this.exitLocking();
     if (!Board.lockPiece(this.current.blocks, this.current.x, this.current.y, this.current.color)) {
       this.endGame();
       return;
@@ -1773,10 +1792,21 @@ const Game = {
     vibrate(cleared * 15);
   },
 
-  // --- Game flow ---
+  // --- FSM transitions (only writers of state) ---
+
+  pause() {
+    if (this.state !== GameState.PLAYING) return;
+    this.state = GameState.PAUSED;
+  },
+
+  resume() {
+    if (this.state !== GameState.PAUSED) return;
+    this.state = GameState.PLAYING;
+  },
 
   endGame() {
-    this.gameOver = true;
+    if (this.state === GameState.OVER) return;
+    this.state = GameState.OVER;
   },
 
   computeGhostY() {
@@ -1811,10 +1841,10 @@ const Game = {
 
   resetGame() {
     this.stopDAS();
-    this.resetLock();
+    this.exitLocking();
     Board.reset();
     this.score = 0; this.level = 1; this.lines = 0;
-    this.paused = false; this.gameOver = false;
+    this.state = GameState.PLAYING;
     this.dropInterval = 1000;
     this.dropCounter = 0;
     PieceGenerator.reset();
@@ -1830,7 +1860,7 @@ const Game = {
   },
 
   tick(dt) {
-    if (this.paused || this.gameOver) return;
+    if (this.state !== GameState.PLAYING) return;
     this.dropCounter += dt;
     this.suppressSoftDrop = false;
     if (this.dropCounter > this.dropInterval) this.drop();
@@ -2429,18 +2459,18 @@ const View = {
   },
 
   applyBodyClasses() {
-    document.body.classList.toggle('paused', Game.paused);
-    document.body.classList.toggle('game-over', Game.gameOver);
+    document.body.classList.toggle('paused', Game.state === GameState.PAUSED);
+    document.body.classList.toggle('game-over', Game.state === GameState.OVER);
   },
   setLandscapeSuspended(on) {
     document.body.classList.toggle('landscape-suspended', on);
   },
   updatePauseLabel() {
-    this._pauseBtn.setAttribute('aria-label', I18n.t(Game.paused ? 'resumeLabel' : 'pause'));
+    this._pauseBtn.setAttribute('aria-label', I18n.t(Game.state === GameState.PAUSED ? 'resumeLabel' : 'pause'));
   },
   applyOverlays() {
-    this._overlayPause.classList.toggle('hidden', !Game.paused || Game.gameOver);
-    this._overlayOver.classList.toggle('hidden', !Game.gameOver);
+    this._overlayPause.classList.toggle('hidden', Game.state !== GameState.PAUSED);
+    this._overlayOver.classList.toggle('hidden', Game.state !== GameState.OVER);
   },
 
   // --- Overlays ---
@@ -2760,7 +2790,7 @@ const Input = {
       const key = e.key.toLowerCase();
       const menuOpen = View._menu.classList.contains('open');
 
-      if (Game.gameOver) {
+      if (Game.state === GameState.OVER) {
         this._handleGameOverKey(key, menuOpen);
         return;
       }
@@ -2777,7 +2807,7 @@ const Input = {
         return;
       }
 
-      if (Game.paused) return;
+      if (Game.state !== GameState.PLAYING) return;
 
       this._handleGameplayKey(key, e);
     });
@@ -2800,7 +2830,7 @@ const Input = {
     let dasTimer = null, arrTimer = null, pointerId = null;
     const start = e => {
       e.preventDefault();
-      if (Game.paused || Game.gameOver) return;
+      if (Game.state !== GameState.PLAYING) return;
       pointerId = e.pointerId;
       try { button.setPointerCapture(pointerId); } catch (_) {}
       if (isSoft) {
@@ -2811,7 +2841,7 @@ const Input = {
       }
       dasTimer = setTimeout(() => {
         arrTimer = setInterval(() => {
-          if (Game.paused || Game.gameOver) return;
+          if (Game.state !== GameState.PLAYING) return;
           if (isSoft && Game.suppressSoftDrop) return;
           action();
         }, ARR_RATE);
@@ -2833,7 +2863,7 @@ const Input = {
   _bindTap(button, action, requireRunning = true) {
     button.addEventListener('click', e => {
       e.preventDefault();
-      if (requireRunning && (Game.paused || Game.gameOver)) return;
+      if (requireRunning && Game.state !== GameState.PLAYING) return;
       action();
     });
     button.addEventListener('contextmenu', e => e.preventDefault());
@@ -2850,16 +2880,16 @@ const Input = {
       hold:    () => Game.hold(),
       rotate:  () => Game.srsRotate(1),
       pause:   () => {
-        if (Game.gameOver) return;
+        if (Game.state === GameState.OVER) return;
         if (View._menu.classList.contains('open')) {
           View.closeSettingsMenu();
-          if (Game.paused) Lifecycle.setPaused(false);
+          if (Game.state === GameState.PAUSED) Lifecycle.setPaused(false);
           return;
         }
         Lifecycle.togglePause();
       },
       resume:  () => {
-        if (Game.gameOver) return;
+        if (Game.state === GameState.OVER) return;
         View.closeSettingsMenu();
         Lifecycle.setPaused(false);
       },
@@ -2901,7 +2931,7 @@ const Input = {
         View._menu.classList.remove('open');
         View._settingsBtn.setAttribute('aria-expanded', 'false');
       } else {
-        if (!Game.paused && !Game.gameOver) Lifecycle.setPaused(true);
+        if (Game.state === GameState.PLAYING) Lifecycle.setPaused(true);
         View._menu.classList.add('open');
         View._settingsBtn.setAttribute('aria-expanded', 'true');
         View.focusGhostToggle();
@@ -2966,7 +2996,7 @@ const Input = {
 
   _bindVisibility() {
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && !Game.gameOver) Lifecycle.setPaused(true);
+      if (document.hidden && Game.state !== GameState.OVER) Lifecycle.setPaused(true);
     });
   },
 };
@@ -2995,7 +3025,7 @@ const Lifecycle = {
     window.addEventListener('orientationchange', () => setTimeout(() => { View.resize(); LandscapeGuard.resizeCheck(); }, 100));
     LandscapeGuard.init(
       () => { cancelAnimationFrame(this._rafId); this._rafId = 0; View.setLandscapeSuspended(true); },
-      () => { View.setLandscapeSuspended(false); requestAnimationFrame(() => { View.resize(); if (!Game.gameOver) this.start(); }); }
+      () => { View.setLandscapeSuspended(false); requestAnimationFrame(() => { View.resize(); if (Game.state !== GameState.OVER) this.start(); }); }
     );
     this.resetGame();
   },
@@ -3014,7 +3044,7 @@ const Lifecycle = {
     HoldTransition.update(dt);
     View.applyShake(Shake._ox, Shake._oy);
 
-    if (Game.gameOver) {
+    if (Game.state === GameState.OVER) {
       RestartConfirm.cancel();
       if (!this._overHandled) {
         this._overHandled = true;
@@ -3037,21 +3067,21 @@ const Lifecycle = {
       NEXT_W: View.NEXT_W,
       NEXT_H: View.NEXT_H,
     });
-    if (Game.gameOver) return;
+    if (Game.state === GameState.OVER) return;
     this._rafId = requestAnimationFrame(t => this._loop(t));
   },
 
   setPaused(v) {
     RestartConfirm.cancel();
     ClearConfirm.cancel();
-    Game.paused = v;
+    if (v) Game.pause(); else Game.resume();
     View.applyOverlays();
     View.applyBodyClasses();
     View.updatePauseLabel();
   },
 
   togglePause() {
-    this.setPaused(!Game.paused);
+    this.setPaused(Game.state !== GameState.PAUSED);
   },
 
   _handleGameOver(forceNoBest = false) {
