@@ -3,19 +3,17 @@ x-gameon-service:
   # ~~~ Prod env ~~~
   game: &gameon
     image: ghcr.io/spaghetti-coder/tetris:latest
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
   # ~~~ Dev env ~~~
   dev: &gameon-dev
     image: caddy:latest
-    ports:
-      - "8080:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - .:/app
-    restart: unless-stopped
 
 services:
-  gameon-dev: *gameon-dev
-  # gameon: *gameon
+  gameon-dev:
+    <<: *gameon-dev
+    # <<: *gameon
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
