@@ -28,6 +28,9 @@
       --color-kbd-border-bot: rgb(0 212 255 / 0.12);
       --color-key-active: rgb(0 212 255 / 0.18);
       --color-overlay-btn-text: #0d0d1a;
+      --color-warn: #ffb454;
+      --color-warn-bg: rgb(255 180 84 / 0.08);
+      --color-warn-border: rgb(255 180 84 / 0.3);
     }
 
     /* --- Layout --- */
@@ -38,6 +41,7 @@
       color: var(--color-text);
       font-family: 'Segoe UI', Tahoma, sans-serif;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
     }
@@ -657,6 +661,30 @@
       .overlay-title { font-size: 22px; letter-spacing: 2px; }
       .overlay-btn { padding: 12px 24px; font-size: 14px; width: min(260px, calc(100% - 32px)); }
     }
+    /* --- FA offline banner --- */
+    .fa-offline {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      border: 1px solid var(--color-warn-border);
+      border-radius: 8px;
+      background: var(--color-warn-bg);
+      color: var(--color-warn);
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+    .fa-offline svg {
+      width: 14px;
+      height: 14px;
+      fill: currentcolor;
+      flex-shrink: 0;
+    }
+    body.no-fa .fa-offline { display: flex; }
     /* --- Landscape hint --- */
     #overlay-rotate {
       position: fixed;
@@ -705,6 +733,10 @@
   </style>
 </head>
 <body>
+  <div id="fa-offline" class="fa-offline" role="status">
+    <svg viewBox="0 0 16 16" aria-hidden="true" fill-rule="evenodd"><path d="M8 1.5 15 14H1L8 1.5Zm.6 5h-1.2v3.8h1.2V6.5Zm0 5.2h-1.2v1.2h1.2v-1.2Z"/></svg>
+    <span data-i18n="faOffline">Offline, FA unavailable</span>
+  </div>
   <div class="wrapper">
     <div class="side">
       <div class="panel">
@@ -824,12 +856,14 @@
   const primary = document.getElementById('fa-primary');
   let added = false;
   let primaryLoaded = false;
+  const markOffline = () => document.body.classList.add('no-fa');
   const addFallback = () => {
     if (added) return;
     added = true;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = FALLBACK_URL;
+    link.onerror = markOffline;
     document.head.appendChild(link);
   };
   const isLoaded = () => {
@@ -901,6 +935,7 @@ const I18n = {
       confirmClear: 'Confirm Clear',
       noRecords: 'No records yet',
       rotateDevice: 'Rotate your device',
+      faOffline: 'Offline, FA unavailable',
       pageTitle: 'Tetris'
     }
   },
@@ -941,6 +976,7 @@ const I18n = {
       confirmClear: 'Подтвердить очистку',
       noRecords: 'Пока пусто',
       rotateDevice: 'Переверни устройство',
+      faOffline: 'Оффлайн, FA недоступен',
       pageTitle: 'Тетрис'
     }
   },
@@ -981,6 +1017,7 @@ const I18n = {
       confirmClear: 'Потвърди изчистване',
       noRecords: 'Все още няма записи',
       rotateDevice: 'Завъртете устройството',
+      faOffline: 'Офлайн, FA недостъпен',
       pageTitle: 'Тетрис'
     }
   },
@@ -1021,6 +1058,7 @@ const I18n = {
       confirmClear: 'Confirmă ștergerea',
       noRecords: 'Nicio înregistrare încă',
       rotateDevice: 'Rotati dispozitivul',
+      faOffline: 'Offline, FA indisponibil',
       pageTitle: 'Tetris'
     }
   },
@@ -1061,6 +1099,7 @@ const I18n = {
       confirmClear: 'Confirmer l\'effacement',
       noRecords: 'Pas encore de records',
       rotateDevice: 'Pivotez votre appareil',
+      faOffline: 'Hors ligne, FA indisponible',
       pageTitle: 'Tetris'
     }
   },
@@ -1101,6 +1140,7 @@ const I18n = {
       confirmClear: 'Confirmar borrado',
       noRecords: 'Sin registros aún',
       rotateDevice: 'Gira tu dispositivo',
+      faOffline: 'Sin conexión, FA no disponible',
       pageTitle: 'Tetris'
     }
   },
@@ -1141,6 +1181,7 @@ const I18n = {
       confirmClear: 'Konfirmi viŝadon',
       noRecords: 'Neniu rekordo ankoraŭ',
       rotateDevice: 'Turnu via aparato',
+      faOffline: 'Senreta, FA nehavebla',
       pageTitle: 'Tetriso'
     }
   },
@@ -1181,6 +1222,7 @@ const I18n = {
       confirmClear: 'Confirmar clarar',
       noRecords: 'Nulle recordas ancora',
       rotateDevice: 'Rota tu apparato',
+      faOffline: 'Offline, FA non disponibile',
       pageTitle: 'Tetris'
     }
   },
@@ -1221,6 +1263,7 @@ const I18n = {
       confirmClear: 'クリア確認',
       noRecords: '記録なし',
       rotateDevice: 'デバイスを回転してください',
+      faOffline: 'オフライン、FA 利用不可',
       pageTitle: 'テトリス'
     }
   },
@@ -1261,6 +1304,7 @@ const I18n = {
       confirmClear: 'o weka',
       noRecords: 'ala li lon',
       rotateDevice: 'lon e ilo',
+      faOffline: 'suno li weka, FA li lon ala',
       pageTitle: 'tetro'
     }
   },
@@ -1301,6 +1345,7 @@ const I18n = {
       confirmClear: '确认清除',
       noRecords: '暂无记录',
       rotateDevice: '请旋转设备',
+      faOffline: '离线，FA 不可用',
       pageTitle: '俄罗斯方块'
     }
   },
