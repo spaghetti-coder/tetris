@@ -575,6 +575,60 @@
       }
     }
 
+    /* --- Help overlay --- */
+    .help-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      background: rgb(5 5 18 / 0.92);
+      backdrop-filter: blur(4px);
+      border-radius: 4px;
+      padding: 6px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeInUp 200ms ease-out both;
+    }
+    #help-close { right: 6px; }
+    .help-title {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-accent);
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-shadow: 0 0 12px rgb(0 212 255 / 0.5);
+    }
+    .help-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .help-item dt {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--color-accent);
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+    .help-item dt i {
+      width: 1em;
+      text-align: center;
+    }
+    .help-item dd {
+      margin-top: 6px;
+      color: var(--color-dim);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
     /* --- Mobile --- */
     @media (width <= 768px) {
       body { align-items: flex-start; justify-content: flex-start; padding: 8px; }
@@ -660,6 +714,7 @@
       .controls { display: none; }
       .overlay-title { font-size: 22px; letter-spacing: 2px; }
       .overlay-btn { padding: 12px 24px; font-size: 14px; width: min(260px, calc(100% - 32px)); }
+      .help-overlay { position: fixed; inset: 0; border-radius: 0; }
     }
     /* --- FA offline banner --- */
     .fa-offline {
@@ -807,6 +862,7 @@
           <span class="indicator" id="grid-indicator"></span>
           <span class="label" data-i18n="grid">Grid</span>
         </button>
+        <div class="settings-separator"></div>
         <div class="submenu-wrapper">
           <button id="ranking-toggle" class="settings-item" type="button" role="menuitem" aria-haspopup="true" aria-expanded="false">
             <i class="fa-solid fa-trophy icon" aria-hidden="true"></i>
@@ -814,6 +870,10 @@
           </button>
           <div id="ranking-submenu" class="submenu custom-scroll" role="group" data-i18n="ranking" data-i18n-attr="aria-label" aria-label="Ranking"></div>
         </div>
+        <button id="help-toggle" class="settings-item" type="button" role="menuitem" data-i18n="help" data-i18n-attr="aria-label" aria-label="Help">
+          <i class="fa-solid fa-circle-question icon" aria-hidden="true"></i>
+          <span class="label" data-i18n="help">Help</span>
+        </button>
       </div>
       <button id="pause-btn" class="icon-btn" data-action="pause" type="button" data-i18n="pause" data-i18n-attr="aria-label" aria-label="Pause"><i class="fa-solid fa-pause icon-pause" aria-hidden="true"></i><i class="fa-solid fa-play icon-play" aria-hidden="true"></i></button>
       <canvas id="board"></canvas>
@@ -832,6 +892,17 @@
         <div class="overlay-score hidden" id="over-bestline"><span data-i18n="bestScore">Best Score:</span> <b id="over-bestline-val">0</b></div>
         <div class="overlay-score hidden" id="over-prevbest"><span data-i18n="previousBest">Previous Best:</span> <b id="over-prev">0</b></div>
         <button class="overlay-btn" data-action="restart" type="button" data-i18n="playAgain">PLAY AGAIN</button>
+      </div>
+      <div class="help-overlay hidden" id="overlay-help" role="dialog" aria-modal="true" data-i18n="help" data-i18n-attr="aria-label" aria-label="Help">
+        <button id="help-close" class="icon-btn" type="button" data-i18n="helpClose" data-i18n-attr="aria-label" aria-label="Close help">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+        <h2 class="help-title" data-i18n="help">Help</h2>
+        <dl class="help-list custom-scroll">
+          <div class="help-item"><dt><i class="fa-solid fa-ghost" aria-hidden="true"></i><span data-i18n="ghost">Ghost</span></dt><dd data-i18n="helpGhost">Shows where the piece will land</dd></div>
+          <div class="help-item"><dt><i class="fa-solid fa-sack-dollar" aria-hidden="true"></i><span data-i18n="sevenBag">7-bag</span></dt><dd data-i18n="helpSevenBag">Every 7 pieces include one of each type</dd></div>
+          <div class="help-item"><dt><i class="fa-solid fa-border-all" aria-hidden="true"></i><span data-i18n="grid">Grid</span></dt><dd data-i18n="helpGrid">Shows the board grid</dd></div>
+        </dl>
       </div>
       </div>
       <button id="hold-btn" class="key" data-action="hold" type="button" data-i18n="hold" data-i18n-attr="aria-label" aria-label="Hold"><span class="hold-label" data-i18n="hold">Hold</span><canvas id="hold-btn-canvas"></canvas></button>
@@ -924,6 +995,11 @@ const I18n = {
       sevenBag: '7-bag',
       blackWhite: 'B/W theme',
       grid: 'Grid',
+      help: 'Help',
+      helpClose: 'Close help',
+      helpGhost: 'Shows where the piece will land',
+      helpSevenBag: 'Every 7 pieces include one of each type',
+      helpGrid: 'Shows the board grid',
       langLabel: 'Lang',
       ranking: 'Ranking',
       bestScore: 'Best Score:',
@@ -965,6 +1041,11 @@ const I18n = {
       sevenBag: '7-мешок',
       blackWhite: 'Ч/Б тема',
       grid: 'Сетка',
+      help: 'Помощь',
+      helpClose: 'Закрыть справку',
+      helpGhost: 'Показывает, куда ляжет фигура',
+      helpSevenBag: 'Каждые 7 фигур — по одной каждого типа',
+      helpGrid: 'Показывает сетку поля',
       langLabel: 'Язык',
       ranking: 'Рекорды',
       bestScore: 'Рекорд:',
@@ -1006,6 +1087,11 @@ const I18n = {
       sevenBag: '7-чувал',
       blackWhite: 'Ч/Б тема',
       grid: 'Мрежа',
+      help: 'Помощ',
+      helpClose: 'Затвори помощта',
+      helpGhost: 'Показва къде ще падне фигурата',
+      helpSevenBag: 'Всяки 7 фигури включват по една от всеки тип',
+      helpGrid: 'Показва мрежата на игрището',
       langLabel: 'Език',
       ranking: 'Рекорди',
       bestScore: 'Рекорд:',
@@ -1047,6 +1133,11 @@ const I18n = {
       sevenBag: '7-sac',
       blackWhite: 'Alb & Neg',
       grid: 'Grilă',
+      help: 'Ajutor',
+      helpClose: 'Închide ajutorul',
+      helpGhost: 'Arată unde va ateriza piesa',
+      helpSevenBag: 'Fiecare 7 piese conțin câte una din fiecare tip',
+      helpGrid: 'Afișează grila câmpului',
       langLabel: 'Limbă',
       ranking: 'Clasament',
       bestScore: 'Cel mai bun scor:',
@@ -1088,6 +1179,11 @@ const I18n = {
       sevenBag: '7-sac',
       blackWhite: 'Noir & Blanc',
       grid: 'Grille',
+      help: 'Aide',
+      helpClose: 'Fermer l\'aide',
+      helpGhost: 'Montre où la pièce va atterrir',
+      helpSevenBag: 'Chaque série de 7 pièces contient une de chaque type',
+      helpGrid: 'Affiche la grille du plateau',
       langLabel: 'Langue',
       ranking: 'Classement',
       bestScore: 'Meilleur score :',
@@ -1129,6 +1225,11 @@ const I18n = {
       sevenBag: '7-bolsa',
       blackWhite: 'B/N',
       grid: 'Cuadrícula',
+      help: 'Ayuda',
+      helpClose: 'Cerrar ayuda',
+      helpGhost: 'Muestra dónde caerá la pieza',
+      helpSevenBag: 'Cada serie de 7 piezas incluye una de cada tipo',
+      helpGrid: 'Muestra la cuadrícula del tablero',
       langLabel: 'Idioma',
       ranking: 'Récords',
       bestScore: 'Mejor puntuación:',
@@ -1170,6 +1271,11 @@ const I18n = {
       sevenBag: '7-sako',
       blackWhite: 'N/B etoso',
       grid: 'Kvadro',
+      help: 'Helpo',
+      helpClose: 'Fermu la helpon',
+      helpGhost: 'Montras, kie la peco falos',
+      helpSevenBag: 'Ĉiuj 7 pecoj enhavas po unu de ĉiu tipo',
+      helpGrid: 'Montras la tabulkvadratojn',
       langLabel: 'Lingvo',
       ranking: 'Klasifiko',
       bestScore: 'Plej bona poento:',
@@ -1211,6 +1317,11 @@ const I18n = {
       sevenBag: 'Saco de 7',
       blackWhite: 'Thema B/N',
       grid: 'Grilla',
+      help: 'Adjuta',
+      helpClose: 'Clauser le adjuta',
+      helpGhost: 'Monstra ubi le piece va aterisar',
+      helpSevenBag: 'Cada serie de 7 piece contene un de cata typo',
+      helpGrid: 'Monstra le grilla del campo',
       langLabel: 'Lingua',
       ranking: 'Classamento',
       bestScore: 'Melior punctos:',
@@ -1252,6 +1363,11 @@ const I18n = {
       sevenBag: '7バッグ',
       blackWhite: '白黒',
       grid: 'グリッド',
+      help: 'ヘルプ',
+      helpClose: 'ヘルプを閉じる',
+      helpGhost: 'ピースの着地位置を表示',
+      helpSevenBag: '7個のピースに全種類が1つずつ含まれる',
+      helpGrid: '盤面のグリッドを表示',
       langLabel: '言語',
       ranking: 'ランキング',
       bestScore: 'ベストスコア：',
@@ -1293,6 +1409,11 @@ const I18n = {
       sevenBag: 'ko tu tu wan',
       blackWhite: 'sitelen loje ala',
       grid: 'linja',
+      help: 'pona',
+      helpClose: 'o weka e pona',
+      helpGhost: 'sitelen anpa',
+      helpSevenBag: 'ilo ale li lon wan wan',
+      helpGrid: 'linja lon insa',
       langLabel: 'toki',
       ranking: 'nanpa suli',
       bestScore: 'nanpa suli:',
@@ -1334,6 +1455,11 @@ const I18n = {
       sevenBag: '7袋',
       blackWhite: '黑白',
       grid: '网格',
+      help: '帮助',
+      helpClose: '关闭帮助',
+      helpGhost: '显示方块的落点位置',
+      helpSevenBag: '每7个方块包含每种各一个',
+      helpGrid: '显示棋盘网格',
       langLabel: '语言',
       ranking: '排行榜',
       bestScore: '最高分：',
@@ -2335,6 +2461,10 @@ const View = {
     // Overlays
     this._overlayPause = document.getElementById('overlay-pause');
     this._overlayOver = document.getElementById('overlay-over');
+    // Help
+    this._helpToggle = document.getElementById('help-toggle');
+    this._helpOverlay = document.getElementById('overlay-help');
+    this._helpClose = document.getElementById('help-close');
     this._bagCount = document.querySelector('.bag-count');
     // Stats
     this._stats = {
@@ -2732,6 +2862,14 @@ const Input = {
       const key = e.key.toLowerCase();
       const menuOpen = View._menu.classList.contains('open');
 
+      if (!View._helpOverlay.classList.contains('hidden')) {
+        if (key === 'escape') {
+          Lifecycle.closeHelp();
+          e.preventDefault();
+        }
+        return;
+      }
+
       if (Game.state === GameState.OVER) {
         this._handleGameOverKey(key, menuOpen);
         return;
@@ -2882,6 +3020,9 @@ const Input = {
       });
     });
 
+    View._helpToggle.addEventListener('click', () => Lifecycle.openHelp());
+    View._helpClose.addEventListener('click', () => Lifecycle.closeHelp());
+
     View._langToggle.addEventListener('click', () => {
       View.closeRankingSubmenu();
       const open = View._langSubmenu.classList.contains('open');
@@ -3009,6 +3150,18 @@ const Lifecycle = {
 
   togglePause() {
     this.setPaused(Game.state !== GameState.PAUSED);
+  },
+
+  openHelp() {
+    View.closeSettingsMenu();
+    if (Game.state === GameState.PLAYING) this.setPaused(true);
+    View._helpOverlay.classList.remove('hidden');
+    View._helpClose.focus();
+  },
+
+  closeHelp() {
+    View._helpOverlay.classList.add('hidden');
+    View._pauseBtn.focus();
   },
 
   _handleGameOver(forceNoBest = false) {
