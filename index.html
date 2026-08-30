@@ -562,6 +562,10 @@
         transform: scale(1.02);
       }
     }
+    .overlay-btn:disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
     .overlay-btn.secondary {
       background: transparent;
       border: 1px solid var(--color-accent);
@@ -2460,6 +2464,7 @@ const View = {
     this._settingsBtn = document.getElementById('settings-btn');
     this._menu = document.getElementById('settings-menu');
     this._actionBtns = document.querySelectorAll('[data-action]');
+    this._overlayBtns = document.querySelectorAll('.overlay [data-action]');
     this._gameBtns = document.querySelectorAll('.controls-mobile .key, #hold-btn, #hard-drop-btn');
     // Settings toggles
     SETTINGS_CONFIG.forEach(cfg => {
@@ -2602,11 +2607,15 @@ const View = {
     this.closeRankingSubmenu();
   },
 
+  setOverlayBtnsDisabled(disabled) {
+    this._overlayBtns.forEach(b => { b.disabled = disabled; });
+  },
   closeSettingsMenu() {
     this.closeAllSubmenus();
     if (!this._menu.classList.contains('open')) return;
     this._menu.classList.remove('open');
     this._settingsBtn.setAttribute('aria-expanded', 'false');
+    this.setOverlayBtnsDisabled(false);
     this.blurMenuFocus();
   },
   blurMenuFocus() {
@@ -2974,11 +2983,9 @@ const Input = {
       },
       resume:  () => {
         if (Game.state === GameState.OVER) return;
-        View.closeSettingsMenu();
         Lifecycle.setPaused(false);
       },
       restart: (btn) => {
-        View.closeSettingsMenu();
         if (btn.hasAttribute('data-confirm-restart')) {
           if (RestartConfirm.isPending(btn)) RestartConfirm.confirm();
           else RestartConfirm.request(btn);
@@ -3014,10 +3021,12 @@ const Input = {
         View.closeLangSubmenu();
         View._menu.classList.remove('open');
         View._settingsBtn.setAttribute('aria-expanded', 'false');
+        View.setOverlayBtnsDisabled(false);
       } else {
         if (Game.state === GameState.PLAYING) Lifecycle.setPaused(true);
         View._menu.classList.add('open');
         View._settingsBtn.setAttribute('aria-expanded', 'true');
+        View.setOverlayBtnsDisabled(true);
         View.focusGhostToggle();
       }
     });
