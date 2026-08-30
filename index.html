@@ -2788,6 +2788,7 @@ const Input = {
 
   _bindOutsideClick() {
     document.addEventListener('click', e => {
+      if (View._helpOverlay.contains(e.target)) return;
       this._closeSubmenuOnOutsideClick(
         e, View._rankingSubmenu, View._rankingToggle,
         () => View._rankingSubmenu.classList.contains('open'),
@@ -3153,7 +3154,6 @@ const Lifecycle = {
   },
 
   openHelp() {
-    View.closeSettingsMenu();
     if (Game.state === GameState.PLAYING) this.setPaused(true);
     View._helpOverlay.classList.remove('hidden');
     View._helpClose.focus();
@@ -3161,7 +3161,7 @@ const Lifecycle = {
 
   closeHelp() {
     View._helpOverlay.classList.add('hidden');
-    View._pauseBtn.focus();
+    View._helpToggle.focus();
   },
 
   _handleGameOver(forceNoBest = false) {
