@@ -308,7 +308,6 @@
       -webkit-tap-highlight-color: transparent;
     }
     .game-area {
-      order: 1;
       position: relative;
       display: inline-block;
       line-height: 0;
@@ -951,7 +950,6 @@
     try { return document.fonts.check(FA_FONT); } catch (_) {}
     return false;
   };
-  if (!primary) { addFallback(); return; }
   primary.onload = () => { primaryLoaded = true; };
   primary.onerror = addFallback;
   document.fonts?.ready?.then(() => { if (!isLoaded()) addFallback(); });
@@ -976,9 +974,8 @@ const storage = {
 
 const LANG_STORAGE_KEY = 'tetris.lang';
 
-const I18n = {
+const MESSAGES = {
   en: {
-    default: true,
     name: 'English',
     messages: {
       score: 'Score',
@@ -1483,38 +1480,32 @@ const I18n = {
       faOffline: '离线，FA 不可用',
       pageTitle: '俄罗斯方块'
     }
-  },
+  }
+};
 
+const DEFAULT_LANG = 'en';
+
+const I18n = {
   current: 'en',
 
   get langs() {
-    return Object.keys(this).filter(k => {
-      const d = Object.getOwnPropertyDescriptor(this, k);
-      return d && !d.get && this[k]?.messages != null;
-    }).sort();
-  },
-
-  get default() {
-    for (const k of this.langs) {
-      if (this[k].default) return k;
-    }
-    return this.langs[0];
+    return Object.keys(MESSAGES).sort();
   },
 
   get names() {
     const n = {};
-    for (const k of this.langs) n[k] = this[k].name;
+    for (const k of this.langs) n[k] = MESSAGES[k].name;
     return n;
   },
 
   t(key) {
-    return this[this.current]?.messages?.[key] ?? key;
+    return MESSAGES[this.current]?.messages?.[key] ?? key;
   },
 
   detectLanguage() {
     let lang = (navigator.language || '').slice(0, 2);
     lang = storage.get(LANG_STORAGE_KEY) ?? lang;
-    return this.langs.includes(lang) ? lang : this.default;
+    return this.langs.includes(lang) ? lang : DEFAULT_LANG;
   },
 
   setLanguage(lang) {
@@ -1571,7 +1562,7 @@ const SRS_KICK_I = {
 
 function getSRSKicks(pieceType, fromState, toState) {
   const table = pieceType === 'I' ? SRS_KICK_I : SRS_KICK_JLSTZ;
-  return table[`${fromState}>${toState}`] || [[0, 0]];
+  return table[`${fromState}>${toState}`];
 }
 const COLORS = [
   null,
@@ -1746,19 +1737,16 @@ const LandscapeGuard = {
   _mq: null,
   _onSuspend: null,
   _onResume: null,
-  _state: false,
 
   init(onSuspend, onResume) {
     this._onSuspend = onSuspend;
     this._onResume = onResume;
     this._mq = matchMedia('(height <= 600px) and (orientation: landscape) and (width <= 1200px)');
-    this._state = this._mq.matches;
-    this._transition(this._state);
+    this._transition(this._mq.matches);
     this._mq.addEventListener('change', (e) => this._transition(e.matches));
   },
 
   _transition(isLandscape) {
-    this._state = isLandscape;
     if (isLandscape) this._onSuspend();
     else this._onResume();
   },
@@ -2235,10 +2223,8 @@ const Render = {
     };
 
     context.save();
-    if (context.roundRect) {
-      traceRoundRect();
-      context.clip();
-    }
+    traceRoundRect();
+    context.clip();
 
     if (mono) {
       context.fillStyle = baseColor;
@@ -2266,12 +2252,8 @@ const Render = {
 
     context.strokeStyle = stroke;
     context.lineWidth = 1;
-    if (context.roundRect) {
-      traceRoundRect();
-      context.stroke();
-    } else {
-      context.strokeRect(px + 0.5, py + 0.5, size - 1, size - 1);
-    }
+    traceRoundRect();
+    context.stroke();
   },
 
   renderBlocks(ctx, blocks, ox, oy, color, size, px = 0, py = 0) {
@@ -2287,8 +2269,8 @@ const Render = {
 
   // --- Pipeline ---
 
-  draw(rctx) {
-    const { ctx, nextCtx, holdCtx, holdBtnCtx, holdBtnCanvas, BLOCK, VIEW_W, VIEW_H, NEXT_W, NEXT_H } = rctx;
+  draw() {
+    const { _ctx: ctx, _nextCtx: nextCtx, _holdCtx: holdCtx, _holdBtnCtx: holdBtnCtx, _holdBtnCanvas: holdBtnCanvas, BLOCK, VIEW_W, VIEW_H, NEXT_W, NEXT_H } = View;
     ctx.fillStyle = '#080815';
     ctx.fillRect(-4, -4, VIEW_W + 8, VIEW_H + 8);
     if (Settings.gridEnabled) this.drawGrid(ctx, BLOCK);
@@ -2304,7 +2286,7 @@ const Render = {
     }
     this.drawNext(nextCtx, NEXT_W, NEXT_H);
     this.drawHold(holdCtx, NEXT_W, NEXT_H);
-    if (getComputedStyle(holdBtnCanvas.parentElement).display !== 'none') {
+    if (View._holdBtnVisible) {
       this.drawHoldBtn(holdBtnCtx, holdBtnCanvas);
     }
     Particles.draw(ctx, BLOCK);
@@ -2407,13 +2389,9 @@ const Render = {
     if (alpha !== undefined) ctx.restore();
   },
 
-  _previewDrawn(cache, type, W, H, force) {
-    return cache.type === type && cache.w === W && cache.h === H && !force;
-  },
-
   drawNext(nextCtx, NEXT_W, NEXT_H) {
     const nextType = Game.next?.type;
-    if (this._previewDrawn(this._nextCache, nextType, NEXT_W, NEXT_H, false)) return;
+    if (this._nextCache.type === nextType && this._nextCache.w === NEXT_W && this._nextCache.h === NEXT_H) return;
     this._nextCache = { type: nextType, w: NEXT_W, h: NEXT_H };
     this._drawPreview(nextCtx, NEXT_W, NEXT_H, Game.next?.blocks, Game.next?.color);
   },
@@ -2421,7 +2399,7 @@ const Render = {
   drawHold(holdCtx, NEXT_W, NEXT_H) {
     const holdType = Game.heldPiece;
     const fade = HoldTransition.fadeIn;
-    if (this._previewDrawn(this._holdCache, holdType, NEXT_W, NEXT_H, fade.active)) return;
+    if (this._holdCache.type === holdType && this._holdCache.w === NEXT_W && this._holdCache.h === NEXT_H && !fade.active) return;
     this._holdCache = { type: holdType, w: NEXT_W, h: NEXT_H };
     const s = SHAPES[holdType];
     this._drawPreview(holdCtx, NEXT_W, NEXT_H, s?.blocks, s?.id, fade.active ? fade.alpha : 1);
@@ -2441,6 +2419,7 @@ const setupCanvas = (canvas, ctx) => {
 
 const View = {
   BLOCK: 30, VIEW_W: 0, VIEW_H: 0, NEXT_W: 0, NEXT_H: 0,
+  _holdBtnVisible: false,
   _statsCache: {},
 
   init() {
@@ -2616,9 +2595,6 @@ const View = {
     this._menu.classList.remove('open');
     this._settingsBtn.setAttribute('aria-expanded', 'false');
     this.setOverlayBtnsDisabled(false);
-    this.blurMenuFocus();
-  },
-  blurMenuFocus() {
     const active = document.activeElement;
     if (active && (this._settingsBtn.contains(active) || this._menu.contains(active))) {
       active.blur();
@@ -2722,6 +2698,7 @@ const View = {
     setupCanvas(this._holdBtnCanvas, this._holdBtnCtx);
     this.NEXT_W = nextRect.width;
     this.NEXT_H = nextRect.height;
+    this._holdBtnVisible = getComputedStyle(this._holdBtnCanvas.parentElement).display !== 'none';
     Render.invalidatePreviewCaches();
   },
 };
@@ -3116,7 +3093,6 @@ const Lifecycle = {
     View.resize();
     Input.init();
     window.addEventListener('resize', () => View.resize());
-    window.addEventListener('orientationchange', () => setTimeout(() => View.resize(), 100));
     LandscapeGuard.init(
       () => { cancelAnimationFrame(this._rafId); this._rafId = 0; View.setLandscapeSuspended(true); },
       () => { View.setLandscapeSuspended(false); requestAnimationFrame(() => { View.resize(); if (Game.state !== GameState.OVER) this.start(); }); }
@@ -3149,18 +3125,7 @@ const Lifecycle = {
     }
     View.applyBodyClasses();
     View.setStats();
-    Render.draw({
-      ctx: View._ctx,
-      nextCtx: View._nextCtx,
-      holdCtx: View._holdCtx,
-      holdBtnCtx: View._holdBtnCtx,
-      holdBtnCanvas: View._holdBtnCanvas,
-      BLOCK: View.BLOCK,
-      VIEW_W: View.VIEW_W,
-      VIEW_H: View.VIEW_H,
-      NEXT_W: View.NEXT_W,
-      NEXT_H: View.NEXT_H,
-    });
+    Render.draw();
     if (Game.state === GameState.OVER) return;
     this._rafId = requestAnimationFrame(t => this._loop(t));
   },
