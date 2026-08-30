@@ -287,10 +287,15 @@
       box-shadow: 0 0 10px rgb(0 212 255 / 0.06), inset 0 1px 0 rgb(255 255 255 / 0.06);
       transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
     }
-    .key:active {
+    /* Press effect only while playing */
+    body:not(.paused):not(.game-over) .key:active {
       background: var(--color-key-active);
       border-color: var(--color-accent);
       box-shadow: 0 0 16px rgb(0 212 255 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    }
+    .key:disabled {
+      opacity: 0.35;
+      cursor: default;
     }
 
     /* --- Canvas area --- */
@@ -1936,8 +1941,15 @@ const Game = {
 
   // --- FSM transitions (only writers of state) ---
 
+  _stopInput() {
+    AutoRepeat.stop();
+    this.softDropActive = false;
+    this.suppressSoftDrop = false;
+  },
+
   pause() {
     if (this.state !== GameState.PLAYING) return;
+    this._stopInput();
     this.state = GameState.PAUSED;
   },
 
@@ -1948,6 +1960,7 @@ const Game = {
 
   endGame() {
     if (this.state === GameState.OVER) return;
+    this._stopInput();
     this.state = GameState.OVER;
   },
 
@@ -2447,6 +2460,7 @@ const View = {
     this._settingsBtn = document.getElementById('settings-btn');
     this._menu = document.getElementById('settings-menu');
     this._actionBtns = document.querySelectorAll('[data-action]');
+    this._gameBtns = document.querySelectorAll('.controls-mobile .key, #hold-btn, #hard-drop-btn');
     // Settings toggles
     SETTINGS_CONFIG.forEach(cfg => {
       this[`_${cfg.base}Toggle`] = document.getElementById(cfg.toggleId);
@@ -2543,6 +2557,8 @@ const View = {
   applyBodyClasses() {
     document.body.classList.toggle('paused', Game.state === GameState.PAUSED);
     document.body.classList.toggle('game-over', Game.state === GameState.OVER);
+    const playing = Game.state === GameState.PLAYING;
+    this._gameBtns.forEach(b => { b.disabled = !playing; });
   },
   setLandscapeSuspended(on) {
     document.body.classList.toggle('landscape-suspended', on);
