@@ -1484,18 +1484,13 @@ const MESSAGES = {
 };
 
 const DEFAULT_LANG = 'en';
+const LANG_NAMES = Object.fromEntries(Object.entries(MESSAGES).map(([code, m]) => [code, m.name]));
 
 const I18n = {
   current: 'en',
 
   get langs() {
     return Object.keys(MESSAGES).sort();
-  },
-
-  get names() {
-    const n = {};
-    for (const k of this.langs) n[k] = MESSAGES[k].name;
-    return n;
   },
 
   t(key) {
@@ -1730,28 +1725,6 @@ const AutoRepeat = {
   },
 };
 
-// --- LandscapeGuard ---
-
-// Owns landscape detection: matchMedia state, callbacks on transition.
-const LandscapeGuard = {
-  _mq: null,
-  _onSuspend: null,
-  _onResume: null,
-
-  init(onSuspend, onResume) {
-    this._onSuspend = onSuspend;
-    this._onResume = onResume;
-    this._mq = matchMedia('(height <= 600px) and (orientation: landscape) and (width <= 1200px)');
-    this._transition(this._mq.matches);
-    this._mq.addEventListener('change', (e) => this._transition(e.matches));
-  },
-
-  _transition(isLandscape) {
-    if (isLandscape) this._onSuspend();
-    else this._onResume();
-  },
-};
-
 // Game FSM: playing ⇄ paused, playing → over, over → playing (reset)
 const GameState = Object.freeze({
   PLAYING: 'playing',
@@ -1771,8 +1744,6 @@ const Game = {
   softDropActive: false, suppressSoftDrop: false,
   lockTimer: null,
   version: 0, // bumped on visible state changes; the loop redraws on bump
-
-  get grid() { return Board.grid; },
 
   // --- Rotation ---
 
@@ -2313,7 +2284,7 @@ const Render = {
     _boardLayerCtx.fillStyle = '#080815';
     _boardLayerCtx.fillRect(0, 0, VIEW_W, VIEW_H);
     if (Settings.gridEnabled) this.drawGrid(_boardLayerCtx, BLOCK);
-    this.renderBlocks(_boardLayerCtx, Game.grid, 0, 0, (x, y) => Game.grid[y][x], BLOCK);
+    this.renderBlocks(_boardLayerCtx, Board.grid, 0, 0, (x, y) => Board.grid[y][x], BLOCK);
   },
 
   draw() {
@@ -2473,11 +2444,6 @@ const View = {
   _lastBodyState: null,
   _statsCache: {},
 
-  init() {
-    this.initRefs();
-    this.initLangOptions();
-  },
-
   // --- DOM refs ---
 
   initRefs() {
@@ -2550,7 +2516,7 @@ const View = {
       const indicator = document.createElement('span');
       indicator.className = 'indicator';
       const name = document.createElement('span');
-      name.textContent = I18n.names[lang];
+      name.textContent = LANG_NAMES[lang];
       btn.appendChild(indicator);
       btn.appendChild(name);
       this._langSubmenu.appendChild(btn);
@@ -2677,7 +2643,7 @@ const View = {
     });
   },
   updateLangToggleLabel() {
-    const name = I18n.names[I18n.current];
+    const name = LANG_NAMES[I18n.current];
     const label = I18n.t('langLabel');
     this._langToggle.querySelector('.label').textContent = `${label}: ${name}`;
   },
@@ -3052,12 +3018,8 @@ const Input = {
 
   _bindSettings() {
     View._settingsBtn.addEventListener('click', () => {
-      const isOpen = View._menu.classList.contains('open');
-      if (isOpen) {
-        View.closeLangSubmenu();
-        View._menu.classList.remove('open');
-        View._settingsBtn.setAttribute('aria-expanded', 'false');
-        View.setOverlayBtnsDisabled(false);
+      if (View._menu.classList.contains('open')) {
+        View.closeSettingsMenu();
       } else {
         if (Game.state === GameState.PLAYING) Lifecycle.setPaused(true);
         View._menu.classList.add('open');
@@ -3142,7 +3104,8 @@ const Lifecycle = {
   _rafId: 0,
 
   init() {
-    View.init();
+    View.initRefs();
+    View.initLangOptions();
     Settings.init();
     PieceGenerator.sevenBag = Settings.sevenBagEnabled;
     Scores.load();
@@ -3154,10 +3117,19 @@ const Lifecycle = {
     View.resize();
     Input.init();
     window.addEventListener('resize', () => View.resize());
-    LandscapeGuard.init(
-      () => { cancelAnimationFrame(this._rafId); this._rafId = 0; View.setLandscapeSuspended(true); },
-      () => { View.setLandscapeSuspended(false); requestAnimationFrame(() => { View.resize(); if (Game.state !== GameState.OVER) this.start(); }); }
-    );
+    const landscapeMq = matchMedia('(height <= 600px) and (orientation: landscape) and (width <= 1200px)');
+    const onLandscape = isLandscape => {
+      if (isLandscape) {
+        cancelAnimationFrame(this._rafId);
+        this._rafId = 0;
+        View.setLandscapeSuspended(true);
+      } else {
+        View.setLandscapeSuspended(false);
+        requestAnimationFrame(() => { View.resize(); if (Game.state !== GameState.OVER) this.start(); });
+      }
+    };
+    onLandscape(landscapeMq.matches);
+    landscapeMq.addEventListener('change', e => onLandscape(e.matches));
     this.resetGame();
   },
 
